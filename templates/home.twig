@@ -35,7 +35,7 @@
         <tbody>
             {% for id,book in books %}
             <tr>
-                <td><a href="{{id}}">{{id}}</a></td>
+                <td><a href="{{id}}">{{book.item}}</a></td>
                 <td>{{book.subclass}}</td>
                 <td>
                     <a href="https://{{lang}}.wikisource.org/wiki/{{book.wikisource}}">
@@ -76,7 +76,8 @@
         and <a href="https://www.wikidata.org/wiki/P1957">Wikisource index page</a> properties.
     </p>
     <p>
-        Please submit bug reports at 
+        Please submit bug reports and suggestions via
+        <a href="https://github.com/wikisource/ws-search/issues">Github</a>.
     </p>
 
 {% endblock %}

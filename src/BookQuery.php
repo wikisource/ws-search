@@ -79,6 +79,7 @@ class BookQuery
             // Start this work's entry in the master list.
             if (!isset($books[$id])) {
                 $books[$id] = array(
+                    'item' => basename($id),
                     'subclass' => '',
                     'title' => '',
                     'author' => '',
