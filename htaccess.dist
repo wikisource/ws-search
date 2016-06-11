@@ -13,7 +13,7 @@
 RewriteEngine On
 
 ## Change this to whatever's appropriate for your installation.
-RewriteBase /bibliodata/
+RewriteBase /ws-search/
 
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f

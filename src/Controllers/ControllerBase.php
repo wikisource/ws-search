@@ -15,11 +15,13 @@ abstract class ControllerBase
 
     public function __construct()
     {
+        /*
         $this->db = new Database();
         if (isset($_SESSION['user_id'])) {
             $sql = 'SELECT `id`, `name` FROM users WHERE id=:id';
             $this->user = $this->db->query($sql, ['id' => $_SESSION['user_id']])->fetch();
         }
+        */
     }
 
     protected function redirect($route)
