@@ -24,16 +24,13 @@ class BookQuery
         $this->author = $author;
     }
 
-    public function run()
+    public function getQuery()
     {
-        if (empty($this->title) && empty($this->author)) {
-            return [];
-        }
         $titleFilter = "?work rdfs:label ?workLabel . \n"
             . "OPTIONAL{ ?work wdt:P1476 ?title } . \n"
             . "FILTER( \n"
-            . "  REGEX(STR(?title), '.*".addslashes($this->title).".*', 'i') \n"
-            . "  || REGEX(STR(?workLabel), '.*".addslashes($this->title).".*', 'i') \n"
+            . "  REGEX(STR(?title), '.*" . addslashes($this->title) . ".*', 'i') \n"
+            . "  || REGEX(STR(?workLabel), '.*" . addslashes($this->title) . ".*', 'i') \n"
             . ") .\n";
 
         $authorFilter = "?author rdfs:label ?authorLabel . "
@@ -43,7 +40,7 @@ class BookQuery
             //. "?familyName rdfs:label ?familyNameLabel . \n"
             . "FILTER( "
             //. "  ("
-            . "    REGEX(STR(?authorLabel), '.*".addslashes($this->author).".*', 'i') "
+            . "    REGEX(STR(?authorLabel), '.*" . addslashes($this->author) . ".*', 'i') "
             //. "  ) || ("
             //. "    LANG(?givenNameLabel) = '".$this->lang."' \n"
             //. "    && REGEX(STR(?givenNameLabel), '.*$this->author.*', 'i') \n"
@@ -53,7 +50,7 @@ class BookQuery
             //. "  )"
             . ")\n";
 
-        $worksQuery = "SELECT
+        $query = "SELECT
                 ?subclass ?subclassLabel ?work ?workLabel ?title ?authorLabel
                 ?originalPublicationDate ?article ?indexPage
             WHERE {
@@ -69,8 +66,15 @@ class BookQuery
                 OPTIONAL{ ?work wdt:P1957 ?indexPage } .
                 SERVICE wikibase:label { bd:serviceParam wikibase:language '" . $this->lang . "' }
             }";
-        //echo "<pre>$worksQuery</pre>";
-        $xml = $this->getXml($worksQuery);
+        return $query;
+    }
+
+    public function run()
+    {
+        if (empty($this->title) && empty($this->author)) {
+            return [];
+        }
+        $xml = $this->getXml($this->getQuery());
         $books = [];
         foreach ($xml->results->result as $res) {
             $bookInfo = $this->getBindings($res);

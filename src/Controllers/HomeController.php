@@ -25,6 +25,7 @@ class HomeController extends ControllerBase
         }
 
         $template->books = $query->run();
+        $template->query = $query->getQuery();
 
         echo $template->render();
     }

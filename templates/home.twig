@@ -60,17 +60,24 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <a href="#sparql" class="btn btn-default" data-toggle="collapse">Sparql</a>
+    <div id="sparql" class="collapse"><pre>{{query}}</pre></div>
+
     {% endif %}
 
+    <h2>About</h2>
     <p>
         This is a simple <a href="https://www.wikidata.org">Wikidata</a> search tool
         for works hosted in Wikisource projects.
     </p>
     <p>
         It finds all <a href="https://www.wikidata.org/wiki/Q386724">works</a>
-        that have a Wikisource page link in the given language,
-        and optionally filters by title (either the item label, or title property)
-        or author (just the author label,
+        that have a Wikisource page link in the given language
+        (they must also have an <a href="https://www.wikidata.org/wiki/Property:P50">author</a>
+        property), and optionally filters by
+        <a href="https://www.wikidata.org/wiki/Property:P1476">title</a>
+        (either the item label, or title property) or author (just the author label,
         because it is being too slow if it looks into the name properties of author items).
         It also looks for the <a href="https://www.wikidata.org/wiki/P577">publication date</a>
         and <a href="https://www.wikidata.org/wiki/P1957">Wikisource index page</a> properties.
