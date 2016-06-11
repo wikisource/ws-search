@@ -1,0 +1,83 @@
+{% extends "base.twig" %}
+{% block content %}
+
+    <form method="get" action="{{baseurl}}/" class="well">
+        <p>
+            <label class="control-label">Language:</label>
+            <input type="text" name="lang" class="form-control" value="{{lang}}" />
+        </p>
+        <p>
+            <label class="control-label">Title:</label>
+            <input type="text" name="title" class="form-control" value="{{form_vals.title}}" />
+        </p>
+        <p>
+            <label class="control-label">Author:</label>
+            <input type="text" name="author" class="form-control" value="{{form_vals.author}}" />
+        </p>
+        <p class="">
+            <input type="submit" value="Search" class="btn btn-info" />
+        </p>
+    </form>
+
+    {% if books %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Classification</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Year</th>
+                <th>EPUB<th>
+                <th>Proofreading index</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for id,book in books %}
+            <tr>
+                <td><a href="{{id}}">{{id}}</a></td>
+                <td>{{book.subclass}}</td>
+                <td>
+                    <a href="https://{{lang}}.wikisource.org/wiki/{{book.wikisource}}">
+                        {{book.title}}
+                    </a>
+                </td>
+                <td>{{book.author}}</td>
+                <td>{{book.year}}</td>
+                <td>
+                    <a href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=epub-3&page={{book.wikisource}}" title="Download EPUB">
+                        <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/EPUB_silk_icon.svg/15px-EPUB_silk_icon.svg.png' />
+                    </a>
+                </td>
+                <td>
+                    {% if book.index_page %}
+                    <a href="https://{{lang}}.wikisource.org/wiki/{{book.index_page}}">
+                        Yes
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <p>
+        This is a simple <a href="https://www.wikidata.org">Wikidata</a> search tool
+        for works hosted in Wikisource projects.
+    </p>
+    <p>
+        It finds all <a href="https://www.wikidata.org/wiki/Q386724">works</a>
+        that have a Wikisource page link in the given language,
+        and optionally filters by title (either the item label, or title property)
+        or author (just the author label,
+        because it is being too slow if it looks into the name properties of author items).
+        It also looks for the <a href="https://www.wikidata.org/wiki/P577">publication date</a>
+        and <a href="https://www.wikidata.org/wiki/P1957">Wikisource index page</a> properties.
+    </p>
+    <p>
+        Please submit bug reports at 
+    </p>
+
+{% endblock %}
+

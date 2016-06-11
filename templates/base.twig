@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {# The above 3 meta tags *must* come first in the head; #}
+        {# any other head content must come *after* these tags. #}
+
+        <title>
+            {{title}}{% if title != site_title %} :: {{site_title}}{% endif %}
+        </title>
+        <link href="{{baseurl}}/assets/components/bootstrap-default/css/bootstrap.min.css" rel="stylesheet">
+        <link href="{{baseurl}}/assets/components/bootstrap-datepicker/bootstrap-datepicker-built.css" rel="stylesheet">
+        <link href="{{baseurl}}/assets/style.css" rel="stylesheet">
+        {% block head %}
+        {% endblock %}
+    </head>
+    <body class="">
+        <main class="container">
+
+            <div class="page-header">
+                <h1>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/114px-Wikisource-logo.svg.png" />
+                    {{site_title}}
+                </h1>
+            </div>
+
+            {% for notice in notices %}
+            <div class="{{notice.type}} notice alert
+                 alert-{% if notice.type=='error' %}danger{% else %}success{% endif %}
+                 " role="alert">
+                <p>{{notice.message}}</p>
+            </div>
+            {% endfor %}
+
+            <div class="content">
+                {% block content %}{% endblock %}
+            </div>
+
+        </main>
+
+        <footer>
+
+            {% if debug %}
+            <ol class="queries">
+                {%for query in queries %}
+                <li><code>{{query}}</code></li>
+                {% endfor %}
+            </ol>
+            {% endif %}
+
+        </footer>
+
+        <script src="{{baseurl}}/assets/components/jquery/jquery.min.js"></script>
+        <script src="{{baseurl}}/assets/components/bootstrap/js/bootstrap.min.js"></script>
+        <script src="{{baseurl}}/assets/components/bootstrap-datepicker/bootstrap-datepicker-built.js"></script>
+        <script src="{{baseurl}}/assets/jquery.maskedinput.min.js"></script>
+        <script src="{{baseurl}}/assets/scripts.js"></script>
+        {% block foot %}
+        {% endblock %}
+    </body>
+</html>
