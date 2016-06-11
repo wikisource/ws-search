@@ -1,13 +1,13 @@
-Bibliodata
-==========
+Wikisource Search
+=================
 
-A tool to browse book data in Wikidata and Wikisource.
+A tool to search through book data in Wikidata and Wikisource.
 
-[![License](https://img.shields.io/github/license/samwilson/bibliodata.svg?style=flat-square)](https://github.com/samwilson/bibliodata/blob/master/LICENSE.txt)
+[![License](https://img.shields.io/github/license/wikisource/ws-search.svg?style=flat-square)](https://github.com/wikisource/ws-search/blob/master/LICENSE.txt)
 
 ## Install
 
-1. Clone from git: `git clone https://github.com/samwilson/bibliodata.git`
+1. Clone from git: `git clone https://github.com/wikisource/ws-search.git`
 2. Update dependencies: `composer update`
 3. Create configuration file: `cp config.dist.php config.php`
 4. Edit configuration file
@@ -21,4 +21,4 @@ A tool to browse book data in Wikidata and Wikisource.
 
 ## Contributing
 
-Development is managed on GitHub at https://github.com/samwilson/bibliodata
+Development is managed on GitHub at https://github.com/wikisource/ws-search
