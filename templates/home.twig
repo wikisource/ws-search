@@ -14,12 +14,21 @@
             <label class="control-label">Author:</label>
             <input type="text" name="author" class="form-control" value="{{form_vals.author}}" />
         </p>
+        <p>
+            <label class="control-label">Subject (for non-fiction):</label>
+            <input type="text" name="subject" class="form-control" value="{{form_vals.subject}}" />
+        </p>
+        <p>
+            <label class="control-label">Genre (for fiction):</label>
+            <input type="text" name="genre" class="form-control" value="{{form_vals.genre}}" />
+        </p>
         <p class="">
             <input type="submit" value="Search" class="btn btn-info" />
         </p>
     </form>
 
     {% if books %}
+    <p class="alert alert-success">{{books|length|number_format}} works found.</p>
     <table class="table table-striped">
         <thead>
             <tr>
@@ -27,34 +36,48 @@
                 <th>Classification</th>
                 <th>Title</th>
                 <th>Author</th>
+                <th>Subjects &amp; Genres</th>
                 <th>Year</th>
-                <th>EPUB</th>
-                <th>Proofreading index</th>
+                <th>Links</th>
             </tr>
         </thead>
         <tbody>
             {% for id,book in books %}
             <tr>
                 <td><a href="{{id}}">{{book.item}}</a></td>
-                <td>{{book.subclass}}</td>
                 <td>
-                    <a href="https://{{lang}}.wikisource.org/wiki/{{book.wikisource}}">
-                        {{book.title}}
+                    {% for subclass in book.subclass %}
+                    {{subclass}}{% if not loop.last %}<br />{% endif %}
+                    {% endfor %}
+                </td>
+                <td>
+                    <a href="{{book.wikisource_url}}">
+                        {{book.wikisource}}
                     </a>
                 </td>
                 <td>{{book.author}}</td>
-                <td>{{book.year}}</td>
                 <td>
-                    <a href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=epub-3&page={{book.wikisource}}" title="Download EPUB">
-                        <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/EPUB_silk_icon.svg/15px-EPUB_silk_icon.svg.png' />
-                    </a>
+                    {% for subject in book.subjects %}
+                    {{subject}}{% if not loop.last %}<br />{% endif %}
+                    {% endfor %}
                 </td>
-                <td>
-                    {% if book.index_page %}
-                    <a href="https://{{lang}}.wikisource.org/wiki/{{book.index_page}}">
-                        Yes
-                    </a>
-                    {% endif %}
+                <td>{{book.year}}</td>
+                <td class="nowrap">
+
+                <a href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=epub-3&page={{book.wikisource}}" title="Download EPUB">
+                    <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/EPUB_silk_icon.svg/15px-EPUB_silk_icon.svg.png' />
+                </a>
+
+                <a href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=pdf&page={{book.wikisource}}" title="Download PDF">
+                    <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Pdfreaders-f.svg/15px-Pdfreaders-f.svg.png' />
+                </a>
+
+                {% if book.index_page %}
+                <a href="https://{{lang}}.wikisource.org/wiki/{{book.index_page}}">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Open_book_nae_02.svg/20px-Open_book_nae_02.svg.png" />
+                </a>
+                {% endif %}
+
                 </td>
             </tr>
             {% endfor %}
@@ -77,8 +100,10 @@
         (they must also have an <a href="https://www.wikidata.org/wiki/Property:P50">author</a>
         property), and optionally filters by
         <a href="https://www.wikidata.org/wiki/Property:P1476">title</a>
-        (either the item label, or title property) or author (just the author label,
-        because it is being too slow if it looks into the name properties of author items).
+        (either the item label, or title property), author (just the author label,
+        because it is being too slow if it looks into the name properties of author items),
+        and <a href="https://www.wikidata.org/wiki/Property:P921">main subject</a>/<!--
+        --><a href="https://www.wikidata.org/wiki/Property:P136">genre</a>.
         It also looks for the <a href="https://www.wikidata.org/wiki/P577">publication date</a>
         and <a href="https://www.wikidata.org/wiki/P1957">Wikisource index page</a> properties.
     </p>

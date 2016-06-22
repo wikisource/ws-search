@@ -8,6 +8,8 @@ class BookQuery
     private $lang = 'en';
     private $title;
     private $author;
+    private $subject;
+    private $genre;
 
     function setLang($lang)
     {
@@ -22,6 +24,16 @@ class BookQuery
     function setAuthor($author)
     {
         $this->author = $author;
+    }
+
+    public function setSubject($subject)
+    {
+        $this->subject = $subject;
+    }
+
+    public function setGenre($genre)
+    {
+        $this->genre = $genre;
     }
 
     public function getQuery()
@@ -50,20 +62,36 @@ class BookQuery
             //. "  )"
             . ")\n";
 
+        $subjectFilter = "?work wdt:P921 ?mainSubject . \n"
+            . "?mainSubject rdfs:label ?mainSubjectLabel . \n"
+            . "FILTER( "
+            . "    LANG(?mainSubjectLabel) = '".$this->lang."'"
+            . "    && REGEX( STR(?mainSubjectLabel), '.*".addslashes($this->subject).".*' )"
+            . ") ";
+
+        $genreFilter = "?work wdt:P136 ?genre . \n"
+            . "?genre rdfs:label ?genreLabel . \n"
+            . "FILTER( "
+            . "    LANG(?genreLabel) = '".$this->lang."'"
+            . "    && REGEX( STR(?genreLabel), '.*".addslashes($this->genre).".*' )"
+            . ") ";
+
         $query = "SELECT
                 ?subclass ?subclassLabel ?work ?workLabel ?title ?authorLabel
                 ?originalPublicationDate ?article ?indexPage
+                ?mainSubjectLabel ?genreLabel
             WHERE {
-                ?subclass wdt:P279* wd:Q386724 . # any subclass of work (Q386724).
-                #?subclass wdt:P279* wd:Q571 . # any subclass of book (Q571).
-                ?work wdt:P31 ?subclass . # where the work is an instance of that subclass.
-                ?article schema:about ?work . # Where there's an article about this item
-                ?article schema:isPartOf <https://" . $this->lang . ".wikisource.org/> . # And the article is part of WS.
+                ?article schema:isPartOf <https://" . $this->lang . ".wikisource.org/> . # The article is part of WS.
+                ?article schema:about ?work . # There's an article about a work.
+                ?subclass wdt:P279* wd:Q386724 . # Any subclass of work (Q386724).
+                ?work wdt:P31 ?subclass . # The work is an instance of that subclass.
                 " . (!empty($this->title) ? $titleFilter : '') . "
                 ?work wdt:P50 ?author .
                 " . (!empty($this->author) ? $authorFilter : '') . "
                 OPTIONAL{ ?work wdt:P577 ?originalPublicationDate } .
                 OPTIONAL{ ?work wdt:P1957 ?indexPage } .
+                " . (!empty($this->subject) ? $subjectFilter : 'OPTIONAL{ ?work wdt:P921 ?mainSubject } ') . " .
+                " . (!empty($this->genre) ? $genreFilter : 'OPTIONAL{ ?work wdt:P921 ?genre } ') . " .
                 SERVICE wikibase:label { bd:serviceParam wikibase:language '" . $this->lang . "' }
             }";
         return $query;
@@ -71,7 +99,7 @@ class BookQuery
 
     public function run()
     {
-        if (empty($this->title) && empty($this->author)) {
+        if (empty($this->title) && empty($this->author) && empty($this->subject) && empty($this->genre)) {
             return [];
         }
         $xml = $this->getXml($this->getQuery());
@@ -84,11 +112,13 @@ class BookQuery
             if (!isset($books[$id])) {
                 $books[$id] = array(
                     'item' => basename($id),
-                    'subclass' => '',
+                    'subclass' => [],
+                    'subjects' => [],
                     'title' => '',
                     'author' => '',
                     'year' => '',
                     'wikisource' => '',
+                    'wikisource_url' => '',
                     'index_page' => '',
                 );
             }
@@ -101,7 +131,15 @@ class BookQuery
     {
         // Subclass.
         if (empty($works[$id]['subclass']) && !empty($work['subclassLabel'])) {
-            $works[$id]['subclass'] = $work['subclassLabel'];
+            $works[$id]['subclass'][$work['subclass']] = $work['subclassLabel'];
+        }
+
+        // Main Subject and Genre.
+        if (!empty($work['mainSubjectLabel'])) {
+            $works[$id]['subjects'][$work['mainSubjectLabel']] = $work['mainSubjectLabel'];
+        }
+        if (!empty($work['genreLabel'])) {
+            $works[$id]['subjects'][$work['genreLabel']] = $work['genreLabel'];
         }
 
         // Check, get, and format the year of publication.
@@ -132,35 +170,27 @@ class BookQuery
 
         // Get the Wikisource page name for the work.
         if (empty($works[$id]['wikisource']) && !empty($work['article'])) {
+            $works[$id]['wikisource_url'] = $work['article'];
             $works[$id]['wikisource'] = $this->wikisourcePageName($work['article']);
         }
 
-        // Get all editions of this work,
-        // to find the Wikisource mainspace page or Index page.
-//        $editions = $this->getXml("SELECT ?edition ?about ?indexPage
-//                WHERE {
-//                    ?edition wdt:P629 wd:" . basename($work['work']) . " . 
-//                    OPTIONAL{ ?edition wdt:P1957 ?indexPage } .
-//                    OPTIONAL{ ?about schema:about ?edition } .
-//                    SERVICE wikibase:label { bd:serviceParam wikibase:language '" . $this->lang . "' }
-//                }");
-//        foreach ($editions->results->result as $ed) {
-//            $edition = $this->getBindings($ed);
-//            // Get the Wikisource page name for the edition.
-//            if (empty($works[$id]['wikisource']) && !empty($edition['about'])) {
-//                $works[$id]['wikisource'] = $this->wikisourcePageName($edition['about']);
-//            }
-//            // Wikisource "Index:" page.
-//            if (empty($works[$id]['index_page']) && !empty($edition['indexPage'])) {
-//                $works[$id]['index_page'] = $this->wikisourcePageName($edition['indexPage']);
-//            }
-//        }
     }
 
     private function getXml($query)
     {
         $url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=" . urlencode($query);
-        $result = file_get_contents($url);
+        try {
+            $result = file_get_contents($url);
+        } catch (\Exception $e) {
+            throw new \Exception("Unable to run query: <pre>".htmlspecialchars($query)."</pre>", 500);
+        }
+        if (empty($result)) {
+            // @OTODO: sort out a proper error handler! :(
+            header('Content-type:text/plain');
+            echo $query;
+            exit(1);
+            
+        }
         $xml = new \SimpleXmlElement($result);
         return $xml;
     }

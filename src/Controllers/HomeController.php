@@ -23,6 +23,12 @@ class HomeController extends ControllerBase
         if (!empty($_GET['author'])) {
             $query->setAuthor($_GET['author']);
         }
+        if (!empty($_GET['subject'])) {
+            $query->setSubject($_GET['subject']);
+        }
+        if (!empty($_GET['genre'])) {
+            $query->setGenre($_GET['genre']);
+        }
 
         $template->books = $query->run();
         $template->query = $query->getQuery();
