@@ -3,72 +3,65 @@
 
     <form method="get" action="{{baseurl}}/" class="well">
         <p>
-            <label class="control-label">Language:</label>
-            <input type="text" name="lang" class="form-control" value="{{lang}}" />
+            Use this form to search {{totalWorks|number_format}} works
+            hosted on {{langs|length|number_format}} Wikisource projects.
         </p>
-        <p>
+        <p class="form-group">
+            <label class="control-label">Language:</label>
+            <select name="lang" class="form-control">
+                <option value="*">All</option>
+                {% for l in langs %}
+                <option value="{{l.code}}" {% if l.code == lang %}selected{% endif %}>
+                    {{l.code}} &mdash; {{l.label}}
+                </option>
+                {% endfor %}
+            </select>
+        </p>
+        <p class="form-group">
             <label class="control-label">Title:</label>
             <input type="text" name="title" class="form-control" value="{{form_vals.title}}" />
         </p>
-        <p>
+        <p class="form-group">
             <label class="control-label">Author:</label>
             <input type="text" name="author" class="form-control" value="{{form_vals.author}}" />
         </p>
-        <p>
-            <label class="control-label">Subject (for non-fiction):</label>
-            <input type="text" name="subject" class="form-control" value="{{form_vals.subject}}" />
-        </p>
-        <p>
-            <label class="control-label">Genre (for fiction):</label>
-            <input type="text" name="genre" class="form-control" value="{{form_vals.genre}}" />
-        </p>
-        <p class="">
+        <p class="form-group">
             <input type="submit" value="Search" class="btn btn-info" />
         </p>
     </form>
 
-    {% if books %}
-    <p class="alert alert-success">{{books|length|number_format}} works found.</p>
+    {% if works %}
+    <p class="alert alert-success">{{works|length|number_format}} works found.</p>
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Item</th>
-                <th>Classification</th>
                 <th>Title</th>
                 <th>Author</th>
-                <th>Subjects &amp; Genres</th>
                 <th>Year</th>
                 <th>Links</th>
             </tr>
         </thead>
         <tbody>
-            {% for id,book in books %}
+            {% for work in works %}
             <tr>
-                <td><a href="{{id}}">{{book.item}}</a></td>
                 <td>
-                    {% for subclass in book.subclass %}
-                    {{subclass}}{% if not loop.last %}<br />{% endif %}
-                    {% endfor %}
-                </td>
-                <td>
-                    <a href="{{book.wikisource_url}}">
-                        {{book.wikisource}}
+                    <a href="https://{{lang}}.wikisource.org/wiki/{{work.pagename|escape('url')}}">
+                        {{work.pagename}}
                     </a>
                 </td>
-                <td>{{book.author}}</td>
                 <td>
-                    {% for subject in book.subjects %}
-                    {{subject}}{% if not loop.last %}<br />{% endif %}
+                    {% for author in work.authors %}
+                    {{author.pagename}}
                     {% endfor %}
                 </td>
-                <td>{{book.year}}</td>
+                <td>{{work.year}}</td>
                 <td class="nowrap">
 
-                <a href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=epub-3&page={{book.wikisource}}" title="Download EPUB">
-                    <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/EPUB_silk_icon.svg/15px-EPUB_silk_icon.svg.png' />
+                    <a href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=epub-3&page={{work.pagename|escape('url')}}" title="Download EPUB">
+                    <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/EPUB_silk_icon.svg/15px-EPUB_silk_icon.svg.png' 'html'/>
                 </a>
 
-                <a href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=pdf&page={{book.wikisource}}" title="Download PDF">
+                <a href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=pdf-a4&page={{work.pagename|escape('url')}}" title="Download PDF">
                     <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Pdfreaders-f.svg/15px-Pdfreaders-f.svg.png' />
                 </a>
 
@@ -84,33 +77,7 @@
         </tbody>
     </table>
 
-    <a href="#sparql" class="btn btn-default" data-toggle="collapse">Sparql</a>
-    <div id="sparql" class="collapse"><pre>{{query}}</pre></div>
-
     {% endif %}
-
-    <h2>About</h2>
-    <p>
-        This is a simple <a href="https://www.wikidata.org">Wikidata</a> search tool
-        for works hosted in Wikisource projects.
-    </p>
-    <p>
-        It finds all <a href="https://www.wikidata.org/wiki/Q386724">works</a>
-        that have a Wikisource page link in the given language
-        (they must also have an <a href="https://www.wikidata.org/wiki/Property:P50">author</a>
-        property), and optionally filters by
-        <a href="https://www.wikidata.org/wiki/Property:P1476">title</a>
-        (either the item label, or title property), author (just the author label,
-        because it is being too slow if it looks into the name properties of author items),
-        and <a href="https://www.wikidata.org/wiki/Property:P921">main subject</a>/<!--
-        --><a href="https://www.wikidata.org/wiki/Property:P136">genre</a>.
-        It also looks for the <a href="https://www.wikidata.org/wiki/P577">publication date</a>
-        and <a href="https://www.wikidata.org/wiki/P1957">Wikisource index page</a> properties.
-    </p>
-    <p>
-        Please submit bug reports and suggestions via
-        <a href="https://github.com/wikisource/ws-search/issues">Github</a>.
-    </p>
 
 {% endblock %}
 

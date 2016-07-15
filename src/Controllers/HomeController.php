@@ -12,27 +12,48 @@ class HomeController extends ControllerBase
         $template->user = $this->user;
         $template->form_vals = $_GET;
 
-        $query = new \App\BookQuery();
-
+        $template->langs = $this->db->query("SELECT `id`, `code`, `label` FROM `languages` ORDER BY `code`")->fetchAll();
         $template->lang = (!empty($_GET['lang'])) ? $_GET['lang'] : 'en';
-        $query->setLang($template->lang);
+        $template->totalWorks = $this->db->query("SELECT COUNT(*) FROM works")->fetchColumn();
 
+        $params = ['lang' => $template->lang];
+        $sqlTitleWhere = '';
         if (!empty($_GET['title'])) {
-            $query->setTitle($_GET['title']);
+            $sqlTitleWhere = 'AND `works`.`pagename` LIKE :title ';
+            $params['title'] = '%' . $_GET['title'] . '%';
         }
+
+        $sqlAuthorWhere = '';
         if (!empty($_GET['author'])) {
-            $query->setAuthor($_GET['author']);
-        }
-        if (!empty($_GET['subject'])) {
-            $query->setSubject($_GET['subject']);
-        }
-        if (!empty($_GET['genre'])) {
-            $query->setGenre($_GET['genre']);
+            $sqlAuthorWhere = 'AND `authors`.`pagename` LIKE :author ';
+            $params['author'] = '%' . $_GET['author'] . '%';
         }
 
-        $template->books = $query->run();
-        $template->query = $query->getQuery();
+        // If nothing has been searched, return the empty template.
+        if (!$sqlTitleWhere && !$sqlAuthorWhere) {
+            echo $template->render();
+            return;
+        }
 
+        // Otherwise, build the queries.
+        $sql = "SELECT DISTINCT works.* FROM works "
+            . " JOIN languages l ON l.id=works.language_id "
+            . " JOIN authors_works aw ON aw.work_id = works.id "
+            . " JOIN authors ON authors.id = aw.author_id "
+            . "WHERE "
+            . " l.code = :lang $sqlTitleWhere $sqlAuthorWhere ";
+        $works = [];
+        foreach ($this->db->query($sql, $params)->fetchAll() as $work) {
+            $sqlAuthors = "SELECT a.* FROM authors a "
+                . " JOIN authors_works aw ON aw.author_id = a.id"
+                . " WHERE aw.work_id = :wid ";
+            $authors = $this->db->query($sqlAuthors, ['wid' => $work->id])->fetchAll();
+            $work->authors = $authors;
+            $works[] = $work;
+        }
+        //header('content-type:text/plain');print_r($works);exit();
+
+        $template->works = $works;
         echo $template->render();
     }
 }

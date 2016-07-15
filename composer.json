@@ -22,7 +22,10 @@
         "eternicode/bootstrap-datepicker": "1.*",
         "eloquent/asplode": "^2.0",
         "nayjest/str-case-converter": "^1.0",
-        "swiftmailer/swiftmailer": "@stable"
+        "swiftmailer/swiftmailer": "@stable",
+        "addwiki/mediawiki-api-base": "2.*",
+        "corneltek/getoptionkit": "2.*",
+        "dflydev/dot-access-data": "^1.0"
     },
     "require-dev": {
         "symfony/var-dumper": "3.*"
