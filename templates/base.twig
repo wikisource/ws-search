@@ -43,19 +43,21 @@
         </main>
 
         <footer>
-            <p class="text-right text-muted">
-                Please submit bug reports and suggestions via
-                <a href="https://github.com/wikisource/ws-search/issues">Github</a>.
-            </p>
+            <div class="container-fluid">
+                <p class="text-right text-muted">
+                    Please submit bug reports and suggestions via
+                    <a href="https://github.com/wikisource/ws-search/issues">Github</a>.
+                </p>
 
             {% if debug %}
             <ol class="queries">
                 {%for query in queries %}
-                <li><code>{{query}}</code></li>
+                <li><code>{{query.sql}}</code> {{dump(query.params)}}</li>
                 {% endfor %}
             </ol>
             {% endif %}
 
+            </div>
         </footer>
 
         <script src="{{baseurl}}/assets/components/jquery/jquery.min.js"></script>

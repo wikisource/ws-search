@@ -3,13 +3,13 @@
 
     <form method="get" action="{{baseurl}}/" class="well">
         <p>
-            Use this form to search {{totalWorks|number_format}} works
-            hosted on {{langs|length|number_format}} Wikisource projects.
+            Use this form to search the {{totalWorks|number_format}} works
+            hosted on {{langs|length|number_format}}
+            <a href="https://wikisource.org/">Wikisource</a> projects.
         </p>
         <p class="form-group">
             <label class="control-label">Language:</label>
             <select name="lang" class="form-control">
-                <option value="*">All</option>
                 {% for l in langs %}
                 <option value="{{l.code}}" {% if l.code == lang %}selected{% endif %}>
                     {{l.code}} &mdash; {{l.label}}
@@ -36,8 +36,9 @@
         <thead>
             <tr>
                 <th>Title</th>
-                <th>Author</th>
+                <th>Author(s)</th>
                 <th>Year</th>
+                <th>Index page(s)</th>
                 <th>Links</th>
             </tr>
         </thead>
@@ -50,11 +51,20 @@
                     </a>
                 </td>
                 <td>
+                    <ol class="list-unstyled">
                     {% for author in work.authors %}
-                    {{author.pagename}}
+                        <li>{{author.pagename}}</li>
                     {% endfor %}
+                    <ol>
                 </td>
                 <td>{{work.year}}</td>
+                <td>
+                    <ol class="list-unstyled">
+                    {% for ip in work.indexPages %}
+                        <li><a href="https://{{lang}}.wikisource.org/wiki/{{ip.pagename|escape('url')}}">{{ip.pagename}}</a></li>
+                    {% endfor %}
+                    <ol>
+                </td>
                 <td class="nowrap">
 
                     <a href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=epub-3&page={{work.pagename|escape('url')}}" title="Download EPUB">

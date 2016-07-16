@@ -41,9 +41,10 @@ class UpgradeCommand extends \App\Commands\CommandBase
                 . " `language_id` INT(4) UNSIGNED NOT NULL, "
                 . " FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`), "
                 . " `wikidata_item` VARCHAR(30) NULL DEFAULT NULL UNIQUE, "
-                . " `pagename` VARCHAR(300) $charset NOT NULL UNIQUE,"
+                . " `pagename` VARCHAR(300) $charset NOT NULL, "
                 . " `title` VARCHAR(300) $charset NOT NULL, "
-                . " `year` VARCHAR(100) $charset NULL DEFAULT NULL "
+                . " `year` VARCHAR(100) $charset NULL DEFAULT NULL, "
+                . " UNIQUE KEY (`language_id`, `pagename`) "
                 . ");");
         }
         if (!$this->tableExists($db, 'authors')) {
@@ -53,7 +54,8 @@ class UpgradeCommand extends \App\Commands\CommandBase
                 . " `language_id` INT(4) UNSIGNED NOT NULL, "
                 . " FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`), "
                 . " `wikidata_item` VARCHAR(30) NULL DEFAULT NULL UNIQUE, "
-                . " `pagename` VARCHAR(300) $charset NOT NULL UNIQUE "
+                . " `pagename` VARCHAR(300) $charset NOT NULL,"
+                . " UNIQUE KEY (`language_id`, `pagename`) "
                 . ");");
         }
         if (!$this->tableExists($db, 'authors_works')) {
@@ -73,7 +75,8 @@ class UpgradeCommand extends \App\Commands\CommandBase
                 . " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
                 . " `language_id` INT(4) UNSIGNED NOT NULL, "
                 . " FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`), "
-                . " `pagename` VARCHAR(300) $charset NOT NULL UNIQUE "
+                . " `pagename` VARCHAR(300) $charset NOT NULL, "
+                . " UNIQUE KEY (`language_id`, `pagename`) "
                 . ");");
         }
         if (!$this->tableExists($db, 'works_indexes')) {

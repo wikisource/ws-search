@@ -16,6 +16,9 @@ class ScrapeCommand extends CommandBase
     /** @var integer The database ID of the language that is currently being processed. */
     private $currentLangId;
 
+    /** @var string The two- or three-lettered language code of the language that is currently being processed. */
+    private $currentLangCode;
+
     public function getCliOptions()
     {
         $options = new OptionCollection;
@@ -79,14 +82,14 @@ class ScrapeCommand extends CommandBase
             ->setParam('apnamespace', 0)
             ->setParam('apfilterredir', 'nonredirects')
             ->setParam('aplimit', 500);
-        $allpages = $this->completeQuery($langCode, $request, 'query.allpages', [$this, 'getSingleMainspaceWork']);
+        $allpages = $this->completeQuery($request, 'query.allpages', [$this, 'getSingleMainspaceWork']);
         print_r($allpages);
         exit();
     }
 
     protected function getSingleMainspaceWork($pagename)
     {
-        $this->write("Importing " . $pagename);
+        $this->write("Importing from $this->currentLangCode: " . $pagename);
 
         // If this is a subpage, determine the mainpage.
         if (strpos($pagename, '/') !== false) {
@@ -100,7 +103,7 @@ class ScrapeCommand extends CommandBase
             ->setAction('parse')
             ->setParam('page', $pagename)
             ->setParam('prop', 'text|templates|categories');
-        $pageInfo = new Data($this->completeQuery('en', $req, 'parse'));
+        $pageInfo = new Data($this->completeQuery($req, 'parse'));
 
         // Deal with the data from within the page text.
         $pageHtml = $pageInfo->get('text.*');
@@ -113,13 +116,6 @@ class ScrapeCommand extends CommandBase
             $microformatVals[$i] = (string) array_shift($titleElements);
         }
 
-        // Link the Index pages (i.e. templates of NS106 etc.).
-        foreach ($pageInfo->get('templates') as $tpl) {
-            if ($tpl['ns'] === 106) {
-                $indexPageName = $tpl['*'];
-            }
-        }
-
         // Save all to the database.
         $sql = "INSERT IGNORE INTO works SET `language_id`=:lid, `pagename`=:pagename, `title`=:title, `year`=:year";
         $insertParams = [
@@ -129,19 +125,52 @@ class ScrapeCommand extends CommandBase
             'year' => $microformatVals['ws-year'],
         ];
         $this->db->query($sql, $insertParams);
-        $authorId = $this->getAuthorId($microformatVals['ws-author']);
+        // Save the authors.
         $workId = $this->getWorkId($rootPageName);
-        $sqlAuthorJoin = 'INSERT IGNORE INTO `authors_works` SET author_id=:a, work_id=:w';
-        $this->db->query($sqlAuthorJoin, ['a' => $authorId, 'w' => $workId]);
+        $authors = explode('/', $microformatVals['ws-author']);
+        foreach ($authors as $author) {
+            $authorId = $this->getOrCreateRecord('authors', $author);
+            $sqlAuthorJoin = 'INSERT IGNORE INTO `authors_works` SET author_id=:a, work_id=:w';
+            $this->db->query($sqlAuthorJoin, ['a' => $authorId, 'w' => $workId]);
+        }
+
+        // Link the Index pages (i.e. templates of NS106 etc.).
+        foreach ($pageInfo->get('templates') as $tpl) {
+            if ($tpl['ns'] === 106) {
+                $this->write(" -- linking an index page: " . $tpl['*']);
+                $indexPageName = $tpl['*'];
+                $indexPageId = $this->getOrCreateRecord('index_pages', $indexPageName);
+                $sqlAuthorJoin = 'INSERT IGNORE INTO `works_indexes` SET index_page_id=:ip, work_id=:w';
+                $this->db->query($sqlAuthorJoin, ['ip' => $indexPageId, 'w' => $workId]);
+            }
+        }
+    }
+
+    /**
+     * Get the ID of a 'authors' or 'index_pages' record, creating it if it doesn't exist.
+     *
+     * @param string $table Either 'authors' or 'index_pages'.
+     * @param string $pagename The pagename to query and/or save.
+     * @return integer The ID of the record.
+     */
+    public function getOrCreateRecord($table, $pagename)
+    {
+        $params = ['pagename' => $pagename, 'l' => $this->currentLangId];
+        $sqlInsert = "INSERT IGNORE INTO `$table` SET `language_id`=:l, `pagename`=:pagename";
+        $this->db->query($sqlInsert, $params);
+        $sqlSelect = "SELECT `id` FROM `$table` WHERE `language_id`=:l AND `pagename`=:pagename";
+        return $this->db->query($sqlSelect, $params)->fetchColumn();
     }
 
     public function getAuthorId($name)
     {
-        $params = ['name' => $name, 'l' => $this->currentLangId];
-        $sqlInsert = 'INSERT IGNORE INTO `authors` SET `language_id`=:l, `pagename`=:name';
-        $this->db->query($sqlInsert, $params);
-        $sqlSelect = 'SELECT `id` FROM `authors` WHERE `language_id`=:l AND `pagename`=:name';
-        return $this->db->query($sqlSelect, $params)->fetchColumn();
+        /*
+          $params = ['name' => $name, 'l' => $this->currentLangId];
+          $sqlInsert = 'INSERT IGNORE INTO `authors` SET `language_id`=:l, `pagename`=:name';
+          $this->db->query($sqlInsert, $params);
+          $sqlSelect = 'SELECT `id` FROM `authors` WHERE `language_id`=:l AND `pagename`=:name';
+          return $this->db->query($sqlSelect, $params)->fetchColumn();
+         */
     }
 
     public function getWorkId($pagename)
@@ -151,9 +180,9 @@ class ScrapeCommand extends CommandBase
         return $this->db->query($sqlSelect, $params)->fetchColumn();
     }
 
-    public function completeQuery($langCode, FluentRequest $request, $resultKey, $callback = false)
+    public function completeQuery(FluentRequest $request, $resultKey, $callback = false)
     {
-        $api = new MediawikiApi("https://$langCode.wikisource.org/w/api.php");
+        $api = new MediawikiApi("https://$this->currentLangCode.wikisource.org/w/api.php");
         $data = [];
         $continue = true;
         do {

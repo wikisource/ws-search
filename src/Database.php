@@ -31,7 +31,7 @@ class Database
             return;
         }
         $host = Config::databaseHost();
-        $dsn = "mysql:host=$host;dbname=" . Config::databaseName().";charset=utf8";
+        $dsn = "mysql:host=$host;dbname=" . Config::databaseName() . ";charset=utf8";
         $attr = array(\PDO::ATTR_TIMEOUT => 10);
         self::$pdo = new \PDO($dsn, Config::databaseUser(), Config::databasePassword(), $attr);
         self::$pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
@@ -99,7 +99,7 @@ class Database
                 true));
         }
 
-        self::$queries[] = $sql;
+        self::$queries[] = ['sql' => $sql, 'params' => $params];
         return $stmt;
     }
 

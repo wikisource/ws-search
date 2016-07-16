@@ -44,11 +44,21 @@ class HomeController extends ControllerBase
             . " l.code = :lang $sqlTitleWhere $sqlAuthorWhere ";
         $works = [];
         foreach ($this->db->query($sql, $params)->fetchAll() as $work) {
+
+            // Find authors.
             $sqlAuthors = "SELECT a.* FROM authors a "
                 . " JOIN authors_works aw ON aw.author_id = a.id"
                 . " WHERE aw.work_id = :wid ";
             $authors = $this->db->query($sqlAuthors, ['wid' => $work->id])->fetchAll();
             $work->authors = $authors;
+
+            // Find index pages.
+            $sqlIndexPages = "SELECT ip.* FROM index_pages ip "
+                . " JOIN works_indexes wi ON wi.index_page_id = ip.id "
+                . " WHERE wi.work_id = :wid ";
+            $indexPages = $this->db->query($sqlIndexPages, ['wid' => $work->id])->fetchAll();
+            $work->indexPages = $indexPages;
+
             $works[] = $work;
         }
         //header('content-type:text/plain');print_r($works);exit();
