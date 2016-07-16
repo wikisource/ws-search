@@ -52,7 +52,12 @@
             {% if debug %}
             <ol class="queries">
                 {%for query in queries %}
-                <li><code>{{query.sql}}</code> {{dump(query.params)}}</li>
+                <li>
+                    <code>{{query.sql}}</code>
+                    {% for key,val in query.params %}
+                        [ {{key}} = {{val}} ]
+                    {% endfor %}
+                </li>
                 {% endfor %}
             </ol>
             {% endif %}
