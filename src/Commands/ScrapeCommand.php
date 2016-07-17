@@ -106,7 +106,12 @@ class ScrapeCommand extends CommandBase
 
         // Deal with the data from within the page text.
         $pageHtml = $pageInfo->get('text.*');
-        $pageXml = new \SimpleXMLElement("<div>$pageHtml</div>");
+        try {
+            $pageXml = new \SimpleXMLElement("<div>$pageHtml</div>");
+        } catch (\Exception $e) {
+            $this->write("ERROR: unable to parse HTML of '{$this->currentLang->code}' page: $pagename");
+            return false;
+        }
         // Pull the microformatted-defined attributes.
         $ids = ['ws-title', 'ws-author', 'ws-year'];
         $microformatVals = [];
