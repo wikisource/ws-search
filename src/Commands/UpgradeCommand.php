@@ -30,12 +30,12 @@ class UpgradeCommand extends \App\Commands\CommandBase
     {
         $this->write("Deleting all data in the database!");
         $db->query("SET foreign_key_checks = 0");
-        $db->query("TRUNCATE `works_indexes`");
-        $db->query("TRUNCATE `index_pages`");
-        $db->query("TRUNCATE `authors_works`");
-        $db->query("TRUNCATE `authors`");
-        $db->query("TRUNCATE `works`");
-        $db->query("TRUNCATE `languages`");
+        $db->query("DROP TABLE `works_indexes`");
+        $db->query("DROP TABLE `index_pages`");
+        $db->query("DROP TABLE `authors_works`");
+        $db->query("DROP TABLE `authors`");
+        $db->query("DROP TABLE `works`");
+        $db->query("DROP TABLE `languages`");
         $db->query("SET foreign_key_checks = 1");
     }
 
