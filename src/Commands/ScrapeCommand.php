@@ -132,7 +132,7 @@ class ScrapeCommand extends CommandBase
         // Link the Index pages (i.e. 'templates' that are in the right NS.).
         foreach ($pageInfo->get('templates') as $tpl) {
             if ($tpl['ns'] === (int) $this->currentLang->index_ns_id) {
-                $this->write(" -- linking an index page: " . $tpl['*']);
+                $this->writeDebug(" -- Linking an index page: " . $tpl['*']);
                 $indexPageName = $tpl['*'];
                 $indexPageId = $this->getOrCreateRecord('index_pages', $indexPageName);
                 $sqlAuthorJoin = 'INSERT IGNORE INTO `works_indexes` SET index_page_id=:ip, work_id=:w';
