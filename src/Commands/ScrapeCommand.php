@@ -81,9 +81,7 @@ class ScrapeCommand extends CommandBase
             ->setParam('apnamespace', 0)
             ->setParam('apfilterredir', 'nonredirects')
             ->setParam('aplimit', 500);
-        $allpages = $this->completeQuery($request, 'query.allpages', [$this, 'getSingleMainspaceWork']);
-        print_r($allpages);
-        exit();
+        $this->completeQuery($request, 'query.allpages', [$this, 'getSingleMainspaceWork']);
     }
 
     protected function getSingleMainspaceWork($pagename)
@@ -229,7 +227,6 @@ class ScrapeCommand extends CommandBase
             $this->currentLang = new \stdClass();
             $this->currentLang->code = $langInfo['langCode'];
             $namespaces = $this->completeQuery($req, 'query.namespaces');
-            //print_r($namespaces);exit();
             $indexNsId = null; // Some don't have ProofreadPage extension installed.S
             foreach ($namespaces as $ns) {
                 if (isset($ns['canonical']) && $ns['canonical'] === 'Index') {
@@ -364,7 +361,6 @@ class ScrapeCommand extends CommandBase
                 $out[(string) $binding['name']] = (string) $binding->uri;
             }
         }
-        //print_r($out);
         return $out;
     }
 
