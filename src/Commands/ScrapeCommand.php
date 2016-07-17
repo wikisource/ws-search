@@ -55,10 +55,10 @@ class ScrapeCommand extends CommandBase
 
         // If nothing else is specified, scrape everything.
         if (empty($this->cliOptions->toArray())) {
-            $langs = $this->getWikisourceLangEditions();
-            foreach ($langs as $lang) {
-                $this->currentLang = $lang;
-                $this->getAllWorks($lang['code']);
+            $langCodes = $this->getWikisourceLangEditions();
+            foreach ($langCodes as $lc) {
+                $this->setCurrentLang($lc);
+                $this->getAllWorks($lc);
             }
         }
     }
@@ -211,7 +211,7 @@ class ScrapeCommand extends CommandBase
             . "?lang rdfs:label ?langName . FILTER(LANG(?langName) = ?langCode) . " // RDF label of the language, in the language
             . "}";
         $xml = $this->getXml($query);
-        $wikisourceSites = [];
+        $languageCodes = [];
         foreach ($xml->results->result as $res) {
             $langInfo = $this->getBindings($res);
 
@@ -233,11 +233,12 @@ class ScrapeCommand extends CommandBase
             }
 
             // Put all of this site's info together.
-            $wikisourceSites[$langInfo['langCode']] = [
-                'code' => $langInfo['langCode'],
-                'id' => $this->db->lastInsertId(),
-                'index_ns' => $indexNsId,
-            ];
+//            $wikisourceSites[$langInfo['langCode']] = new \stdClass();
+//                'code' => $langInfo['langCode'],
+//                'id' => $this->db->lastInsertId(),
+//                'index_ns' => $indexNsId,
+//            ];
+            $languageCodes[] = $langInfo['langCode'];
 
             // Save the language info to the DB.
             $sql = "INSERT IGNORE INTO languages SET code=:code, label=:label, index_ns_id=:ns";
@@ -249,7 +250,7 @@ class ScrapeCommand extends CommandBase
             $this->writeDebug(" -- Saving " . $params['label'] . ' (' . $params['code'] . ')');
             $this->db->query($sql, $params);
         }
-        return $wikisourceSites;
+        return $languageCodes;
     }
     /* private function getWorks($offset)
       {
