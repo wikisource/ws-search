@@ -33,11 +33,6 @@ class ScrapeCommand extends CommandBase
         $this->db = new \App\Database;
         if ($this->cliOptions->langs) {
             $this->getWikisourceLangEditions();
-            /*
-              foreach ($langIds as $langCode => $langId) {
-              $this->currentLangId = $langId;
-              $this->getAllWorks($langCode);
-              } */
         }
 
         // All works in one language Wikisource.
@@ -56,6 +51,15 @@ class ScrapeCommand extends CommandBase
             }
             $this->setCurrentLang($langCode);
             $this->getSingleMainspaceWork($this->cliOptions->title);
+        }
+
+        // If nothing else is specified, scrape everything.
+        if (empty($this->cliOptions->toArray())) {
+            $langs = $this->getWikisourceLangEditions();
+            foreach ($langs as $lang) {
+                $this->currentLang = $lang;
+                $this->getAllWorks($lang['code']);
+            }
         }
     }
 
@@ -166,7 +170,7 @@ class ScrapeCommand extends CommandBase
 
     public function completeQuery(FluentRequest $request, $resultKey, $callback = false)
     {
-        $api = new MediawikiApi("https://".$this->currentLang->code.".wikisource.org/w/api.php");
+        $api = new MediawikiApi("https://" . $this->currentLang->code . ".wikisource.org/w/api.php");
         $data = [];
         $continue = true;
         do {
@@ -247,102 +251,101 @@ class ScrapeCommand extends CommandBase
         }
         return $wikisourceSites;
     }
+    /* private function getWorks($offset)
+      {
+      $queryWorks = "SELECT
+      ?work ?workLabel ?title ?authorLabel ?originalPublicationDate ?about ?indexPage
+      WHERE {
+      ?type wdt:P279* wd:Q571 . # any subclass of book (Q571).
+      ?work wdt:P31 ?type . # where the work is an instance of that subclass.
+      OPTIONAL{ ?work wdt:P1476 ?title } .
+      OPTIONAL{ ?work wdt:P50 ?author } .
+      OPTIONAL{ ?work wdt:P577 ?originalPublicationDate } .
+      OPTIONAL{ ?work wdt:P1957 ?indexPage } .
+      OPTIONAL{ ?about schema:about ?work } . # Wikisource page name?
+      SERVICE wikibase:label { bd:serviceParam wikibase:language 'en' }
+      }
+      OFFSET $offset LIMIT 20";
+      $xml = $this->getXml($queryWorks);
 
-    /*private function getWorks($offset)
-    {
-        $queryWorks = "SELECT 
-                ?work ?workLabel ?title ?authorLabel ?originalPublicationDate ?about ?indexPage
-            WHERE {
-                ?type wdt:P279* wd:Q571 . # any subclass of book (Q571).
-                ?work wdt:P31 ?type . # where the work is an instance of that subclass.
-                OPTIONAL{ ?work wdt:P1476 ?title } .
-                OPTIONAL{ ?work wdt:P50 ?author } .
-                OPTIONAL{ ?work wdt:P577 ?originalPublicationDate } .
-                OPTIONAL{ ?work wdt:P1957 ?indexPage } .
-                OPTIONAL{ ?about schema:about ?work } . # Wikisource page name?
-                SERVICE wikibase:label { bd:serviceParam wikibase:language 'en' }
-            }
-            OFFSET $offset LIMIT 20";
-        $xml = $this->getXml($queryWorks);
+      $works = [];
+      foreach ($xml->results->result as $res) {
+      $work = $this->getBindings($res);
+      $w = $work['work'];
 
-        $works = [];
-        foreach ($xml->results->result as $res) {
-            $work = $this->getBindings($res);
-            $w = $work['work'];
+      // Start this work's entry in the master list.
+      if (!isset($works[$w])) {
+      $works[$w] = array(
+      'title' => '',
+      'author' => '',
+      'year' => '',
+      'wikisource' => '',
+      'index_page' => '',
+      );
+      }
 
-            // Start this work's entry in the master list.
-            if (!isset($works[$w])) {
-                $works[$w] = array(
-                    'title' => '',
-                    'author' => '',
-                    'year' => '',
-                    'wikisource' => '',
-                    'index_page' => '',
-                );
-            }
+      // Check, get, and format the year of publication.
+      if (empty($works[$w]['year']) && !empty($work['originalPublicationDate'])) {
+      $works[$w]['year'] = date('Y', strtotime($work['originalPublicationDate']));
+      }
 
-            // Check, get, and format the year of publication.
-            if (empty($works[$w]['year']) && !empty($work['originalPublicationDate'])) {
-                $works[$w]['year'] = date('Y', strtotime($work['originalPublicationDate']));
-            }
+      // Wikisource "Index:" page.
+      if (empty($works[$w]['index_page']) && !empty($work['indexPage'])) {
+      $works[$w]['index_page'] = $this->wikisourcePageName($work['indexPage']);
+      }
 
-            // Wikisource "Index:" page.
-            if (empty($works[$w]['index_page']) && !empty($work['indexPage'])) {
-                $works[$w]['index_page'] = $this->wikisourcePageName($work['indexPage']);
-            }
+      // Check for and get the work's title.
+      if (empty($works[$w]['title'])) {
+      if (!empty($work['title'])) {
+      $works[$w]['title'] = $work['title'];
+      } else {
+      $works[$w]['title'] = $work['workLabel'];
+      }
+      }
 
-            // Check for and get the work's title.
-            if (empty($works[$w]['title'])) {
-                if (!empty($work['title'])) {
-                    $works[$w]['title'] = $work['title'];
-                } else {
-                    $works[$w]['title'] = $work['workLabel'];
-                }
-            }
+      // Check for and get the work's author.
+      if (empty($works[$w]['author'])) {
+      if (!empty($work['authorLabel'])) {
+      $works[$w]['author'] = $work['authorLabel'];
+      }
+      }
 
-            // Check for and get the work's author.
-            if (empty($works[$w]['author'])) {
-                if (!empty($work['authorLabel'])) {
-                    $works[$w]['author'] = $work['authorLabel'];
-                }
-            }
+      // Get the Wikisource page name for the work.
+      if (empty($works[$w]['wikisource']) && !empty($work['about'])) {
+      $works[$w]['wikisource'] = $this->wikisourcePageName($work['about']);
+      }
 
-            // Get the Wikisource page name for the work.
-            if (empty($works[$w]['wikisource']) && !empty($work['about'])) {
-                $works[$w]['wikisource'] = $this->wikisourcePageName($work['about']);
-            }
+      // Get all editions of this work.
+      $editions = $this->getXml("SELECT ?edition ?about ?indexPage
+      WHERE {
+      ?edition wdt:P629 wd:" . basename($work['work']) . " .
+      OPTIONAL{ ?edition wdt:P1957 ?indexPage } .
+      OPTIONAL{ ?about schema:about ?edition } .
+      SERVICE wikibase:label { bd:serviceParam wikibase:language 'en' }
+      }");
+      foreach ($editions->results->result as $ed) {
+      $edition = getBindings($ed);
+      // Get the Wikisource page name for the edition.
+      if (empty($works[$w]['wikisource']) && !empty($edition['about'])) {
+      $works[$w]['wikisource'] = wikisourcePageName($edition['about']);
+      }
+      // Wikisource "Index:" page.
+      if (empty($works[$w]['index_page']) && !empty($edition['indexPage'])) {
+      $works[$w]['index_page'] = wikisourcePageName($edition['indexPage']);
+      }
+      }
+      }
+      return $works;
 
-            // Get all editions of this work.
-            $editions = $this->getXml("SELECT ?edition ?about ?indexPage
-                WHERE {
-                    ?edition wdt:P629 wd:" . basename($work['work']) . " . 
-                    OPTIONAL{ ?edition wdt:P1957 ?indexPage } .
-                    OPTIONAL{ ?about schema:about ?edition } .
-                    SERVICE wikibase:label { bd:serviceParam wikibase:language 'en' }
-                }");
-            foreach ($editions->results->result as $ed) {
-                $edition = getBindings($ed);
-                // Get the Wikisource page name for the edition.
-                if (empty($works[$w]['wikisource']) && !empty($edition['about'])) {
-                    $works[$w]['wikisource'] = wikisourcePageName($edition['about']);
-                }
-                // Wikisource "Index:" page.
-                if (empty($works[$w]['index_page']) && !empty($edition['indexPage'])) {
-                    $works[$w]['index_page'] = wikisourcePageName($edition['indexPage']);
-                }
-            }
-        }
-        return $works;
-
-//        echo "\n\n{| class='wikitable sortable'\n! Year !! Title !! Author !! Transcription project \n|-\n";
-//        foreach ($works as $w) {
-//            $title = (!empty($w['wikisource'])) ? "[[{$w['wikisource']}|{$w['title']}]]" : $w['title'];
-//            $indexPage = (!empty($w['index_page'])) ? "[[" . $w['index_page'] . "|Yes]]" : '';
-//            echo "| {$w['year']} || $title || {$w['author']} || $indexPage \n"
-//            . "|-\n";
-//        }
-//        echo "|}\n";
-    }*/
+      //        echo "\n\n{| class='wikitable sortable'\n! Year !! Title !! Author !! Transcription project \n|-\n";
+      //        foreach ($works as $w) {
+      //            $title = (!empty($w['wikisource'])) ? "[[{$w['wikisource']}|{$w['title']}]]" : $w['title'];
+      //            $indexPage = (!empty($w['index_page'])) ? "[[" . $w['index_page'] . "|Yes]]" : '';
+      //            echo "| {$w['year']} || $title || {$w['author']} || $indexPage \n"
+      //            . "|-\n";
+      //        }
+      //        echo "|}\n";
+      } */
 
     private function getBindings($xml)
     {
@@ -367,19 +370,18 @@ class ScrapeCommand extends CommandBase
         $xml = new \SimpleXmlElement($result);
         return $xml;
     }
-
     /**
      * Get the page name from a Wikisource URL.
      * @param string $url
      * @return string
      */
-    /*private function wikisourcePageName($url)
-    {
-        $wikiLang = 'en';
-        if (!empty($url) && strpos($url, "$wikiLang.wikisource") !== false) {
-            $strPrefix = strlen("https://$wikiLang.wikisource.org/wiki/");
-            return urldecode(substr($url, $strPrefix));
-        }
-        return '';
-    }*/
+    /* private function wikisourcePageName($url)
+      {
+      $wikiLang = 'en';
+      if (!empty($url) && strpos($url, "$wikiLang.wikisource") !== false) {
+      $strPrefix = strlen("https://$wikiLang.wikisource.org/wiki/");
+      return urldecode(substr($url, $strPrefix));
+      }
+      return '';
+      } */
 }

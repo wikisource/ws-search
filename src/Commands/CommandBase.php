@@ -19,8 +19,10 @@ abstract class CommandBase
         $options->add('h|help', 'Get help about this subcommand.');
         $parser = new OptionParser($options);
         try {
-            $this->cliOptions = $parser->parse($args);
-            if ($this->cliOptions->help) {
+            if (!empty($args)) {
+                $this->cliOptions = $parser->parse($args);
+            }
+            if ($this->cliOptions && $this->cliOptions->help) {
                 $printer = new ConsoleOptionPrinter();
                 echo "The '$commandName' subcommand takes the following options:\n";
                 echo $printer->render($options);
