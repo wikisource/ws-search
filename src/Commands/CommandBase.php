@@ -48,4 +48,17 @@ abstract class CommandBase
         }
         echo $message . ($newline ? PHP_EOL : '');
     }
+
+    /**
+     * Write a message to the terminal ONLY IF debug mode is enabled.
+     *
+     * @param string $message
+     * @param string $newline
+     */
+    public function writeDebug($message, $newline = true)
+    {
+        if (\App\Config::debug()) {
+            $this->write($message, $newline);
+        }
+    }
 }

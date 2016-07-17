@@ -84,7 +84,7 @@ class ScrapeCommand extends CommandBase
 
     protected function getSingleMainspaceWork($pagename)
     {
-        $this->write("Importing from {$this->currentLang->code}: " . $pagename);
+        $this->writeDebug("Importing from {$this->currentLang->code}: " . $pagename);
 
         // If this is a subpage, determine the mainpage.
         if (strpos($pagename, '/') !== false) {
@@ -208,11 +208,8 @@ class ScrapeCommand extends CommandBase
             . "}";
         $xml = $this->getXml($query);
         $wikisourceSites = [];
-        $x = 1;
         foreach ($xml->results->result as $res) {
             $langInfo = $this->getBindings($res);
-            $this->write("x = $x -- ".$langInfo['langCode']);
-            $x++;
 
             // Find the Index NS identifier.
             $req = FluentRequest::factory()
@@ -245,7 +242,7 @@ class ScrapeCommand extends CommandBase
                 'label' => $langInfo['langName'],
                 'ns' => $indexNsId,
             ];
-            $this->write(" -- Saving " . $params['label'] . ' (' . $params['code'] . ')');
+            $this->writeDebug(" -- Saving " . $params['label'] . ' (' . $params['code'] . ')');
             $this->db->query($sql, $params);
         }
         return $wikisourceSites;
@@ -345,15 +342,6 @@ class ScrapeCommand extends CommandBase
 //            . "|-\n";
 //        }
 //        echo "|}\n";
-    }*/
-
-    /*private function totalBookCount()
-    {
-        $countQuery = "SELECT (COUNT(*) AS ?count) 
-            WHERE { ?type wdt:P279* wd:Q571 . ?work wdt:P31 ?type }";
-        $countXml = $this->getXml($countQuery);
-        $count = (int) $countXml->results->result->binding->literal[0];
-        $this->write('Wikidata: ' . number_format($count) . " books found");
     }*/
 
     private function getBindings($xml)
