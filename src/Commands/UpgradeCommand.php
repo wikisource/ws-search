@@ -31,7 +31,8 @@ class UpgradeCommand extends \App\Commands\CommandBase
             $db->query("CREATE TABLE `languages` ("
                 . " `id` INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
                 . " `code` VARCHAR(10) $charset NOT NULL UNIQUE, "
-                . " `label` VARCHAR(200) $charset NOT NULL "
+                . " `label` VARCHAR(200) $charset NOT NULL, "
+                . " `index_ns_id` INT(3) NULL DEFAULT NULL "
                 . ");");
         }
         if (!$this->tableExists($db, 'works')) {

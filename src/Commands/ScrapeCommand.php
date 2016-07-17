@@ -13,11 +13,11 @@ class ScrapeCommand extends CommandBase
     /** @var \App\Database */
     private $db;
 
-    /** @var integer The database ID of the language that is currently being processed. */
-    private $currentLangId;
-
-    /** @var string The two- or three-lettered language code of the language that is currently being processed. */
-    private $currentLangCode;
+    /**
+     * @var \stdClass The database ID ('id'), text code ('code'), and Index NS ID ('index_ns_id')
+     * of the language that is currently being processed.
+     */
+    private $currentLang;
 
     public function getCliOptions()
     {
@@ -36,7 +36,7 @@ class ScrapeCommand extends CommandBase
             $this->nukeData();
         }
         if ($this->options->get('langs')) {
-            $langIds = $this->getWikisourceLangEditions();
+            $this->getWikisourceLangEditions();
             /*
               foreach ($langIds as $langCode => $langId) {
               $this->currentLangId = $langId;
@@ -65,10 +65,9 @@ class ScrapeCommand extends CommandBase
 
     public function setCurrentLang($code)
     {
-        $sql = "SELECT id FROM languages WHERE code=:code";
-        $this->currentLangId = $this->db->query($sql, ['code' => $code])->fetchColumn();
-        $this->currentLangCode = $code;
-        if (!$this->currentLangId) {
+        $sql = "SELECT * FROM languages WHERE code=:code";
+        $this->currentLang = $this->db->query($sql, ['code' => $code])->fetch();
+        if (!$this->currentLang) {
             throw new \Exception("Unable to load language '$code'");
         }
     }
@@ -89,7 +88,7 @@ class ScrapeCommand extends CommandBase
 
     protected function getSingleMainspaceWork($pagename)
     {
-        $this->write("Importing from $this->currentLangCode: " . $pagename);
+        $this->write("Importing from {$this->currentLang->code}: " . $pagename);
 
         // If this is a subpage, determine the mainpage.
         if (strpos($pagename, '/') !== false) {
@@ -119,7 +118,7 @@ class ScrapeCommand extends CommandBase
         // Save all to the database.
         $sql = "INSERT IGNORE INTO works SET `language_id`=:lid, `pagename`=:pagename, `title`=:title, `year`=:year";
         $insertParams = [
-            'lid' => $this->currentLangId,
+            'lid' => $this->currentLang->id,
             'pagename' => $rootPageName,
             'title' => $microformatVals['ws-title'],
             'year' => $microformatVals['ws-year'],
@@ -134,9 +133,9 @@ class ScrapeCommand extends CommandBase
             $this->db->query($sqlAuthorJoin, ['a' => $authorId, 'w' => $workId]);
         }
 
-        // Link the Index pages (i.e. templates of NS106 etc.).
+        // Link the Index pages (i.e. 'templates' that are in the right NS.).
         foreach ($pageInfo->get('templates') as $tpl) {
-            if ($tpl['ns'] === 106) {
+            if ($tpl['ns'] === (int) $this->currentLang->index_ns_id) {
                 $this->write(" -- linking an index page: " . $tpl['*']);
                 $indexPageName = $tpl['*'];
                 $indexPageId = $this->getOrCreateRecord('index_pages', $indexPageName);
@@ -155,34 +154,23 @@ class ScrapeCommand extends CommandBase
      */
     public function getOrCreateRecord($table, $pagename)
     {
-        $params = ['pagename' => $pagename, 'l' => $this->currentLangId];
+        $params = ['pagename' => $pagename, 'l' => $this->currentLang->id];
         $sqlInsert = "INSERT IGNORE INTO `$table` SET `language_id`=:l, `pagename`=:pagename";
         $this->db->query($sqlInsert, $params);
         $sqlSelect = "SELECT `id` FROM `$table` WHERE `language_id`=:l AND `pagename`=:pagename";
         return $this->db->query($sqlSelect, $params)->fetchColumn();
     }
 
-    public function getAuthorId($name)
-    {
-        /*
-          $params = ['name' => $name, 'l' => $this->currentLangId];
-          $sqlInsert = 'INSERT IGNORE INTO `authors` SET `language_id`=:l, `pagename`=:name';
-          $this->db->query($sqlInsert, $params);
-          $sqlSelect = 'SELECT `id` FROM `authors` WHERE `language_id`=:l AND `pagename`=:name';
-          return $this->db->query($sqlSelect, $params)->fetchColumn();
-         */
-    }
-
     public function getWorkId($pagename)
     {
-        $params = ['pagename' => $pagename, 'l' => $this->currentLangId];
+        $params = ['pagename' => $pagename, 'l' => $this->currentLang->id];
         $sqlSelect = 'SELECT `id` FROM `works` WHERE `language_id`=:l AND `pagename`=:pagename';
         return $this->db->query($sqlSelect, $params)->fetchColumn();
     }
 
     public function completeQuery(FluentRequest $request, $resultKey, $callback = false)
     {
-        $api = new MediawikiApi("https://$this->currentLangCode.wikisource.org/w/api.php");
+        $api = new MediawikiApi("https://".$this->currentLang->code.".wikisource.org/w/api.php");
         $data = [];
         $continue = true;
         do {
@@ -228,17 +216,46 @@ class ScrapeCommand extends CommandBase
             . "?lang rdfs:label ?langName . FILTER(LANG(?langName) = ?langCode) . " // RDF label of the language, in the language
             . "}";
         $xml = $this->getXml($query);
-        $langIds = [];
+        $wikisourceSites = [];
         foreach ($xml->results->result as $res) {
             $langInfo = $this->getBindings($res);
-            $sql = "INSERT INTO languages SET code=:code, label=:label";
-            $this->db->query($sql, ['code' => $langInfo['langCode'], 'label' => $langInfo['langName']]);
-            $langIds[$langInfo['langCode']] = $this->db->lastInsertId();
+
+            // Find the Index NS identifier.
+            $req = FluentRequest::factory()
+                ->setAction('query')
+                ->setParam('meta', 'siteinfo')
+                ->setParam('siprop', 'namespaces');
+            $this->currentLang->code = $langInfo['langCode'];
+            $namespaces = $this->completeQuery($req, 'query.namespaces');
+            //print_r($namespaces);exit();
+            $indexNsId = null; // Some don't have ProofreadPage extension installed.S
+            foreach ($namespaces as $ns) {
+                if (isset($ns['canonical']) && $ns['canonical'] === 'Index') {
+                    $indexNsId = $ns['id'];
+                }
+            }
+
+            // Put all of this site's info together.
+            $wikisourceSites[$langInfo['langCode']] = [
+                'code' => $langInfo['langCode'],
+                'id' => $this->db->lastInsertId(),
+                'index_ns' => $indexNsId,
+            ];
+
+            // Save the language info to the DB.
+            $sql = "INSERT IGNORE INTO languages SET code=:code, label=:label, index_ns_id=:ns";
+            $params = [
+                'code' => $langInfo['langCode'],
+                'label' => $langInfo['langName'],
+                'ns' => $indexNsId,
+            ];
+            $this->write(" -- Saving " . $params['label'] . ' (' . $params['code'] . ')');
+            $this->db->query($sql, $params);
         }
-        return $langIds;
+        return $wikisourceSites;
     }
 
-    private function getWorks($offset)
+    /*private function getWorks($offset)
     {
         $queryWorks = "SELECT 
                 ?work ?workLabel ?title ?authorLabel ?originalPublicationDate ?about ?indexPage
@@ -332,16 +349,16 @@ class ScrapeCommand extends CommandBase
 //            . "|-\n";
 //        }
 //        echo "|}\n";
-    }
+    }*/
 
-    private function totalBookCount()
+    /*private function totalBookCount()
     {
         $countQuery = "SELECT (COUNT(*) AS ?count) 
             WHERE { ?type wdt:P279* wd:Q571 . ?work wdt:P31 ?type }";
         $countXml = $this->getXml($countQuery);
         $count = (int) $countXml->results->result->binding->literal[0];
         $this->write('Wikidata: ' . number_format($count) . " books found");
-    }
+    }*/
 
     private function getBindings($xml)
     {
@@ -372,7 +389,7 @@ class ScrapeCommand extends CommandBase
      * @param string $url
      * @return string
      */
-    private function wikisourcePageName($url)
+    /*private function wikisourcePageName($url)
     {
         $wikiLang = 'en';
         if (!empty($url) && strpos($url, "$wikiLang.wikisource") !== false) {
@@ -380,5 +397,5 @@ class ScrapeCommand extends CommandBase
             return urldecode(substr($url, $strPrefix));
         }
         return '';
-    }
+    }*/
 }
