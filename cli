@@ -12,34 +12,15 @@ require __DIR__ . '/vendor/autoload.php';
 
 
 // Determine the command classname, defaulting to 'help' if not found.
-//var_dump(stripos($argv[1], 'help'));
 $commandName = (isset($argv[1]) && stripos($argv[1], 'help') === false) ? $argv[1] : 'help';
 $commandClass = '\\App\\Commands\\' . App\Text::camelcase($commandName) . 'Command';
 if (!class_exists($commandClass)) {
     echo "ERROR: Command '$commandName' not valid." . PHP_EOL;
     $commandClass = '\\App\\Commands\\HelpCommand';
 }
-$command = new $commandClass();
 
-// Parse the command's arguemnts, showing an error if this doesn't work.
-//array_shift($argv);
-$options = $command->getCliOptions();
-$options->add('h|help', 'Get help about the command');
-$parser = new \GetOptionKit\OptionParser($options);
-try {
-    $result = $parser->parse($argv);
-} catch (\Exception $e) {
-    echo $e->getMessage() . "\nUse --help for details of valid arguments\n";
-    exit(1);
-}
 
-// Print command help.
-if ($result->help) {
-    $printer = new \GetOptionKit\OptionPrinter\ConsoleOptionPrinter();
-    echo $printer->render($options);
-    exit(0);
-}
-
-// Run the actual command.
-$command->setCliOptions($result);
+// Run the actual command, giving it the remaining CLI arguments.
+array_shift($argv);
+$command = new $commandClass($commandName, $argv);
 $command->run();

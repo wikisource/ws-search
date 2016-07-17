@@ -9,18 +9,34 @@ use GetOptionKit\OptionCollection;
 class UpgradeCommand extends \App\Commands\CommandBase
 {
 
+    public function getCliOptions()
+    {
+        $specs = new OptionCollection;
+        $specs->add('nuke', 'Destroy all existing data before upgrading.');
+        return $specs;
+    }
+
     public function run()
     {
         $db = new Database();
+        if ($this->cliOptions->nuke) {
+            $this->nukeData($db);
+        }
         $this->installStructure($db);
         $this->write("Upgrade complete; now running version " . Config::version());
     }
 
-    public function getCliOptions()
+    private function nukeData(Database $db)
     {
-        $specs = new OptionCollection;
-        $specs->add('f|foo:', 'option requires a value.')->isa('String');
-        return $specs;
+        $this->write("Deleting all data in the database!");
+        $db->query("SET foreign_key_checks = 0");
+        $db->query("TRUNCATE `works_indexes`");
+        $db->query("TRUNCATE `index_pages`");
+        $db->query("TRUNCATE `authors_works`");
+        $db->query("TRUNCATE `authors`");
+        $db->query("TRUNCATE `works`");
+        $db->query("TRUNCATE `languages`");
+        $db->query("SET foreign_key_checks = 1");
     }
 
     protected function installStructure(Database $db)

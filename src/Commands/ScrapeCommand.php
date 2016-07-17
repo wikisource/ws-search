@@ -22,20 +22,16 @@ class ScrapeCommand extends CommandBase
     public function getCliOptions()
     {
         $options = new OptionCollection;
-        $options->add('l|lang?string');
-        $options->add('t|title?string');
-        $options->add('langs');
-        $options->add('nuke');
+        $options->add('l|lang?string', 'The language code of the Wikisource to scrape');
+        $options->add('t|title?string', 'The title of a single page to scrape, must be combined with --lang');
+        $options->add('langs', 'Retrieve metadata about all language Wikisources');
         return $options;
     }
 
     public function run()
     {
         $this->db = new \App\Database;
-        if ($this->options->get('nuke')) {
-            $this->nukeData();
-        }
-        if ($this->options->get('langs')) {
+        if ($this->cliOptions->langs) {
             $this->getWikisourceLangEditions();
             /*
               foreach ($langIds as $langCode => $langId) {
@@ -45,21 +41,21 @@ class ScrapeCommand extends CommandBase
         }
 
         // All works in one language Wikisource.
-        if ($this->options->get('lang') && !$this->options->get('title')) {
-            $langCode = $this->options->get('lang');
+        if ($this->cliOptions->lang && !$this->cliOptions->title) {
+            $langCode = $this->cliOptions->lang;
             $this->setCurrentLang($langCode);
             $this->getAllWorks($langCode);
         }
 
         // A single work from a single Wikisource.
-        if ($this->options->get('title')) {
-            $langCode = $this->options->get('lang');
+        if ($this->cliOptions->title) {
+            $langCode = $this->cliOptions->lang;
             if (!$langCode) {
                 $this->write("You must also specify the Wikisource language code, with --lang=xx");
                 exit(1);
             }
             $this->setCurrentLang($langCode);
-            $this->getSingleMainspaceWork($this->options->get('title'));
+            $this->getSingleMainspaceWork($this->cliOptions->title);
         }
     }
 
@@ -177,6 +173,10 @@ class ScrapeCommand extends CommandBase
             // Send request and save data for later returning.
             $result = new Data($api->getRequest($request));
             $restultingData = $result->get($resultKey);
+            if (!is_array($restultingData)) {
+                $continue = false;
+                continue;
+            }
             $data = array_merge_recursive($data, $restultingData);
 
             // If a callback is specified, call it for each of the current result set.
@@ -197,15 +197,6 @@ class ScrapeCommand extends CommandBase
         return $data;
     }
 
-    private function nukeData()
-    {
-        $this->write("Deleting all data in the database!");
-        $this->db->query("SET foreign_key_checks = 0");
-        $this->db->query("TRUNCATE `works`");
-        $this->db->query("TRUNCATE `languages`");
-        $this->db->query("SET foreign_key_checks = 1");
-    }
-
     private function getWikisourceLangEditions()
     {
         $this->write("Getting list of Wikisource languages");
@@ -217,14 +208,19 @@ class ScrapeCommand extends CommandBase
             . "}";
         $xml = $this->getXml($query);
         $wikisourceSites = [];
+        $x = 1;
         foreach ($xml->results->result as $res) {
             $langInfo = $this->getBindings($res);
+            $this->write("x = $x -- ".$langInfo['langCode']);
+            $x++;
 
             // Find the Index NS identifier.
             $req = FluentRequest::factory()
                 ->setAction('query')
                 ->setParam('meta', 'siteinfo')
                 ->setParam('siprop', 'namespaces');
+            // This next bit is a bit hacky :(
+            $this->currentLang = new \stdClass();
             $this->currentLang->code = $langInfo['langCode'];
             $namespaces = $this->completeQuery($req, 'query.namespaces');
             //print_r($namespaces);exit();

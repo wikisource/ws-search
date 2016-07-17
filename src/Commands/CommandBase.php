@@ -2,47 +2,37 @@
 
 namespace App\Commands;
 
+use App\Database;
 use GetOptionKit\OptionParser;
+use GetOptionKit\Exception\InvalidOptionException;
+use GetOptionKit\OptionPrinter\ConsoleOptionPrinter;
 
 abstract class CommandBase
 {
 
     /** @var \GetOptionKit\OptionResult */
-    protected $options;
+    protected $cliOptions;
 
-//    public function __construct($args = [])
-//    {
-//        //$printer = new ConsoleOptionPrinter();
-//        //echo $printer->render($specs);
-//        $specs = $this->getSpecs();
-//        $specs->add('l|lang:=string', "Language code of the Wikisource to scrape.")
-//            ->defaultValue('en');
-//        $specs->add('o|output:=string', "Output path for the generated files. Will be created if it doesn't exist.")
-//            ->defaultValue(__DIR__ . '/../library');
-//        $specs->add('h|help', "Display command help.");
-//        $parser = new OptionParser($specs);
-//        try {
-//            $result = $parser->parse($args);
-//            print_r($result);
-//            $lang = $result->lang;
-//            $outputDir = $result->output;
-//            if ($result->help) {
-//                $printer = new ConsoleOptionPrinter();
-//                echo $printer->render($specs);
-//                exit(0);
-//            }
-//        } catch (Exception $e) {
-//            echo $e->getMessage() . "\nUse --help for details of valid arguments\n";
-//            exit();
-//        }
-//        exit();
-//    }
-    public function setCliOptions(\GetOptionKit\OptionResult $options)
+    public function __construct($commandName, $args = [])
     {
-        $this->options = $options;
+        $options = $this->getCliOptions();
+        $options->add('h|help', 'Get help about this subcommand.');
+        $parser = new OptionParser($options);
+        try {
+            $this->cliOptions = $parser->parse($args);
+            if ($this->cliOptions->help) {
+                $printer = new ConsoleOptionPrinter();
+                echo "The '$commandName' subcommand takes the following options:\n";
+                echo $printer->render($options);
+                exit();
+            }
+        } catch (InvalidOptionException $invalidOption) {
+            $this->write($invalidOption->getMessage());
+            exit(1);
+        }
     }
 
-    abstract public function getCliOptions();
+    abstract protected function getCliOptions();
 
     /**
      * Write a line to the terminal.
