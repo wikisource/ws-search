@@ -25,7 +25,8 @@
         "swiftmailer/swiftmailer": "@stable",
         "addwiki/mediawiki-api-base": "2.*",
         "corneltek/getoptionkit": "2.*",
-        "dflydev/dot-access-data": "^1.0"
+        "dflydev/dot-access-data": "^1.0",
+        "symfony/dom-crawler": "^3.1"
     },
     "require-dev": {
         "symfony/var-dumper": "3.*"

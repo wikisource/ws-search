@@ -6,6 +6,7 @@ use Mediawiki\Api\MediawikiApi;
 use Mediawiki\Api\FluentRequest;
 use GetOptionKit\OptionCollection;
 use Dflydev\DotAccessData\Data;
+use Symfony\Component\DomCrawler\Crawler;
 
 class ScrapeCommand extends CommandBase
 {
@@ -104,22 +105,17 @@ class ScrapeCommand extends CommandBase
 
         // Deal with the data from within the page text.
         $pageHtml = $pageInfo->get('text.*');
-        try {
-            $pageXml = new \SimpleXMLElement("<div>$pageHtml</div>");
-        } catch (\Exception $e) {
-            $this->write("ERROR: unable to parse HTML of '{$this->currentLang->code}' page: $pagename");
-            return false;
-        }
+        $pageCrawler = new Crawler("<div>$pageHtml</div>");
         // Pull the microformatted-defined attributes.
-        $ids = ['ws-title', 'ws-author', 'ws-year'];
+        $microformatIds = ['ws-title', 'ws-author', 'ws-year'];
         $microformatVals = [];
-        foreach ($ids as $i) {
-            $titleElements = $pageXml->xpath("//*[@id='$i']/text()");
-            $microformatVals[$i] = (string) array_shift($titleElements);
+        foreach ($microformatIds as $i) {
+            $el = $pageCrawler->filterXPath("//*[@id='$i']");
+            $microformatVals[$i] = ($el->count() > 0) ? $el->text() : '';
         }
 
-        // Save all to the database.
-        $sql = "INSERT IGNORE INTO works SET `language_id`=:lid, `pagename`=:pagename, `title`=:title, `year`=:year";
+        // Save basic work data to the database.
+        $sql = "INSERT IGNORE INTO `works` SET `language_id`=:lid, `pagename`=:pagename, `title`=:title, `year`=:year";
         $insertParams = [
             'lid' => $this->currentLang->id,
             'pagename' => $rootPageName,
@@ -127,6 +123,7 @@ class ScrapeCommand extends CommandBase
             'year' => $microformatVals['ws-year'],
         ];
         $this->db->query($sql, $insertParams);
+
         // Save the authors.
         $workId = $this->getWorkId($rootPageName);
         $authors = explode('/', $microformatVals['ws-author']);
@@ -144,6 +141,13 @@ class ScrapeCommand extends CommandBase
                 $indexPageId = $this->getOrCreateRecord('index_pages', $indexPageName);
                 $sqlAuthorJoin = 'INSERT IGNORE INTO `works_indexes` SET index_page_id=:ip, work_id=:w';
                 $this->db->query($sqlAuthorJoin, ['ip' => $indexPageId, 'w' => $workId]);
+            }
+        }
+
+        // Save the categories.
+        foreach ($pageInfo->get('categories') as $cat) {
+            if (isset($cat['hidden'])) {
+                continue;
             }
         }
     }

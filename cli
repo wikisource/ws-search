@@ -21,9 +21,9 @@ if (!class_exists($commandClass)) {
 
 
 // Run the actual command, giving it the remaining CLI arguments.
-array_shift($argv);
-if (empty($argv)) {
-    $commandClass = '\\App\\Commands\\HelpCommand';
-}
+//array_shift($argv);
+//if (empty($argv)) {
+//    $commandClass = '\\App\\Commands\\HelpCommand';
+//}
 $command = new $commandClass($commandName, $argv);
 $command->run();
