@@ -37,10 +37,11 @@
             <tr>
                 <th>Wikidata</th>
                 <th>Title</th>
-                <th>Author(s)</th>
+                <th>Authors</th>
                 <th>Year</th>
-                <th>Index page(s)</th>
-                <th>Links</th>
+                <th>Categories</th>
+                <th>Index pages</th>
+                <th>Download</th>
             </tr>
         </thead>
         <tbody>
@@ -66,6 +67,9 @@
                     <ol>
                 </td>
                 <td>{{work.year}}</td>
+                <td>
+                    <!-- Categories go here -->
+                </td>
                 <td>
                     <ol class="list-unstyled">
                     {% for ip in work.indexPages %}

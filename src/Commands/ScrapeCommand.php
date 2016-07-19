@@ -125,7 +125,7 @@ class ScrapeCommand extends CommandBase
         $microformatVals = [];
         foreach ($microformatIds as $i) {
             $el = $pageCrawler->filterXPath("//*[@id='$i']");
-            $microformatVals[$i] = ($el->count() > 0) ? $el->html() : '';
+            $microformatVals[$i] = ($el->count() > 0) ? $el->text() : '';
         }
 
         // Save basic work data to the database. It might already be there, if this is a subpage, in which case we don't
