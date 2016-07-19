@@ -116,14 +116,16 @@ class ScrapeCommand extends CommandBase
         }
 
         // Deal with the data from within the page text.
+        // Note the slightly odd way of ensuring the HTML content is loaded as UTF8.
         $pageHtml = $pageParse->get('text.*');
-        $pageCrawler = new Crawler("<div>$pageHtml</div>");
+        $pageCrawler = new Crawler;
+        $pageCrawler->addHTMLContent("<div>$pageHtml</div>", 'UTF-8');
         // Pull the microformatted-defined attributes.
         $microformatIds = ['ws-title', 'ws-author', 'ws-year'];
         $microformatVals = [];
         foreach ($microformatIds as $i) {
             $el = $pageCrawler->filterXPath("//*[@id='$i']");
-            $microformatVals[$i] = ($el->count() > 0) ? $el->text() : '';
+            $microformatVals[$i] = ($el->count() > 0) ? $el->html() : '';
         }
 
         // Save basic work data to the database. It might already be there, if this is a subpage, in which case we don't
@@ -138,7 +140,7 @@ class ScrapeCommand extends CommandBase
             'lid' => $this->currentLang->id,
             'wikidata_item' => $wikibaseItem,
             'pagename' => $rootPageName,
-            'title' => $microformatVals['ws-title'],
+            'title' => (!empty($microformatVals['ws-title'])) ? $microformatVals['ws-title'] : $pagename,
             'year' => $microformatVals['ws-year'],
         ];
         $this->db->query($sql, $insertParams);
