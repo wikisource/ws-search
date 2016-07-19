@@ -12,7 +12,9 @@ class HomeController extends ControllerBase
         $template->user = $this->user;
         $template->form_vals = $_GET;
 
-        $template->langs = $this->db->query("SELECT `id`, `code`, `label` FROM `languages` ORDER BY `code`")->fetchAll();
+        $template->langs = $this->db->query("SELECT DISTINCT languages.* FROM `languages` "
+            . " JOIN works ON works.language_id = languages.id "
+            . " ORDER BY `code`")->fetchAll();
         $template->lang = (!empty($_GET['lang'])) ? $_GET['lang'] : 'en';
         $template->totalWorks = $this->db->query("SELECT COUNT(*) FROM works")->fetchColumn();
 
