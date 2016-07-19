@@ -56,7 +56,7 @@ class UpgradeCommand extends \App\Commands\CommandBase
             $db->query("CREATE TABLE `works` ("
                 . " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
                 . " `language_id` INT(4) UNSIGNED NOT NULL, "
-                . " FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`), "
+                . " FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`) ON DELETE CASCADE, "
                 . " `wikidata_item` VARCHAR(30) NULL DEFAULT NULL UNIQUE, "
                 . " `pagename` VARCHAR(255) $charset NOT NULL, "
                 . " `title` VARCHAR(255) $charset NOT NULL, "
@@ -69,7 +69,7 @@ class UpgradeCommand extends \App\Commands\CommandBase
             $db->query("CREATE TABLE `authors` ("
                 . " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
                 . " `language_id` INT(4) UNSIGNED NOT NULL, "
-                . " FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`), "
+                . " FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`) ON DELETE CASCADE, "
                 . " `wikidata_item` VARCHAR(30) NULL DEFAULT NULL UNIQUE, "
                 . " `pagename` VARCHAR(255) $charset NOT NULL,"
                 . " UNIQUE KEY (`language_id`, `pagename`) "
@@ -80,9 +80,9 @@ class UpgradeCommand extends \App\Commands\CommandBase
             $db->query("CREATE TABLE `authors_works` ("
                 . " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
                 . " `author_id` INT(10) UNSIGNED NOT NULL, "
-                . " FOREIGN KEY (`author_id`) REFERENCES `authors` (`id`),"
+                . " FOREIGN KEY (`author_id`) REFERENCES `authors` (`id`) ON DELETE CASCADE,"
                 . " `work_id` INT(10) UNSIGNED NOT NULL, "
-                . " FOREIGN KEY (`work_id`) REFERENCES `works` (`id`), "
+                . " FOREIGN KEY (`work_id`) REFERENCES `works` (`id`) ON DELETE CASCADE, "
                 . " UNIQUE KEY (`author_id`, `work_id`) "
                 . ");");
         }
@@ -91,7 +91,7 @@ class UpgradeCommand extends \App\Commands\CommandBase
             $db->query("CREATE TABLE `index_pages` ("
                 . " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
                 . " `language_id` INT(4) UNSIGNED NOT NULL, "
-                . " FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`), "
+                . " FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`) ON DELETE CASCADE, "
                 . " `pagename` VARCHAR(255) $charset NOT NULL, "
                 . " UNIQUE KEY (`language_id`, `pagename`) "
                 . ");");
@@ -101,9 +101,9 @@ class UpgradeCommand extends \App\Commands\CommandBase
             $db->query("CREATE TABLE `works_indexes` ("
                 . " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
                 . " `work_id` INT(10) UNSIGNED NOT NULL, "
-                . " FOREIGN KEY (`work_id`) REFERENCES `works` (`id`), "
+                . " FOREIGN KEY (`work_id`) REFERENCES `works` (`id`) ON DELETE CASCADE, "
                 . " `index_page_id` INT(10) UNSIGNED NOT NULL, "
-                . " FOREIGN KEY (`index_page_id`) REFERENCES `index_pages` (`id`),"
+                . " FOREIGN KEY (`index_page_id`) REFERENCES `index_pages` (`id`) ON DELETE CASCADE,"
                 . " UNIQUE KEY (`index_page_id`, `work_id`) "
                 . ");");
         }

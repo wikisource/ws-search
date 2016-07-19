@@ -3,7 +3,7 @@
 
     <form method="get" action="{{baseurl}}/" class="well">
         <p>
-            Use this form to search the {{totalWorks|number_format}} works
+            Use this form to search {{totalWorks|number_format}} works
             hosted on {{langs|length|number_format}}
             <a href="https://wikisource.org/">Wikisource</a> projects.
         </p>
@@ -46,8 +46,15 @@
             {% for work in works %}
             <tr>
                 <td>
+                    {% if work.wikidata_item %}
+                    <a href="https://wikidata.org/wiki/{{work.wikidata_item}}">
+                        {{work.wikidata_item}}
+                    </a>
+                    {% endif %}
+                </td>
+                <td>
                     <a href="https://{{lang}}.wikisource.org/wiki/{{work.pagename|escape('url')}}">
-                        {{work.pagename}}
+                        {{work.title}}
                     </a>
                 </td>
                 <td>

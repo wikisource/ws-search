@@ -89,6 +89,25 @@ class ScrapeCommand extends CommandBase
     {
         $this->writeDebug("Importing from {$this->currentLang->code}: " . $pagename);
 
+        // Retrieve the page text, Index links (i.e. templates in the right NS), and categories.
+        $requestParse = FluentRequest::factory()
+            ->setAction('parse')
+            ->setParam('page', $pagename)
+            ->setParam('prop', 'text|templates|categories');
+        $pageParse = new Data($this->completeQuery($requestParse, 'parse'));
+        // Normalize the pagename.
+        $pagename = $pageParse->get('title');
+
+        // Get the Wikidata Item.
+        $requestProps = FluentRequest::factory()
+            ->setAction('query')
+            ->setParam('titles', $pagename)
+            ->setParam('prop', 'pageprops')
+            ->setParam('ppprop', 'wikibase_item');
+        $pageProps = $this->completeQuery($requestProps, 'query.pages');
+        $pagePropsSingle = new Data(array_shift($pageProps));
+        $wikibaseItem = $pagePropsSingle->get('pageprops.wikibase_item');
+
         // If this is a subpage, determine the mainpage.
         if (strpos($pagename, '/') !== false) {
             $rootPageName = substr($pagename, 0, strpos($pagename, '/'));
@@ -96,15 +115,8 @@ class ScrapeCommand extends CommandBase
             $rootPageName = $pagename;
         }
 
-        // Retrieve the page text, Index links (i.e. templates in the right NS), and categories.
-        $req = FluentRequest::factory()
-            ->setAction('parse')
-            ->setParam('page', $pagename)
-            ->setParam('prop', 'text|templates|categories');
-        $pageInfo = new Data($this->completeQuery($req, 'parse'));
-
         // Deal with the data from within the page text.
-        $pageHtml = $pageInfo->get('text.*');
+        $pageHtml = $pageParse->get('text.*');
         $pageCrawler = new Crawler("<div>$pageHtml</div>");
         // Pull the microformatted-defined attributes.
         $microformatIds = ['ws-title', 'ws-author', 'ws-year'];
@@ -114,10 +126,17 @@ class ScrapeCommand extends CommandBase
             $microformatVals[$i] = ($el->count() > 0) ? $el->text() : '';
         }
 
-        // Save basic work data to the database.
-        $sql = "INSERT IGNORE INTO `works` SET `language_id`=:lid, `pagename`=:pagename, `title`=:title, `year`=:year";
+        // Save basic work data to the database. It might already be there, if this is a subpage, in which case we don't
+        // really care that this won't do anything, and this is just as fast as checking whether it exists or not.
+        $sql = "INSERT IGNORE INTO `works` SET"
+            . " `language_id`=:lid,"
+            . " `wikidata_item`=:wikidata_item,"
+            . " `pagename`=:pagename,"
+            . " `title`=:title,"
+            . " `year`=:year";
         $insertParams = [
             'lid' => $this->currentLang->id,
+            'wikidata_item' => $wikibaseItem,
             'pagename' => $rootPageName,
             'title' => $microformatVals['ws-title'],
             'year' => $microformatVals['ws-year'],
@@ -134,7 +153,7 @@ class ScrapeCommand extends CommandBase
         }
 
         // Link the Index pages (i.e. 'templates' that are in the right NS.).
-        foreach ($pageInfo->get('templates') as $tpl) {
+        foreach ($pageParse->get('templates') as $tpl) {
             if ($tpl['ns'] === (int) $this->currentLang->index_ns_id) {
                 $this->writeDebug(" -- Linking an index page: " . $tpl['*']);
                 $indexPageName = $tpl['*'];
@@ -145,7 +164,7 @@ class ScrapeCommand extends CommandBase
         }
 
         // Save the categories.
-        foreach ($pageInfo->get('categories') as $cat) {
+        foreach ($pageParse->get('categories') as $cat) {
             if (isset($cat['hidden'])) {
                 continue;
             }
