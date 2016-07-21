@@ -31,6 +31,8 @@ class ScrapeCommand extends CommandBase
 
     public function run()
     {
+        $startTime = time();
+
         $this->db = new \App\Database;
         if ($this->cliOptions->langs) {
             $this->getWikisourceLangEditions();
@@ -62,6 +64,8 @@ class ScrapeCommand extends CommandBase
                 $this->getAllWorks($lc);
             }
         }
+
+        $this->write("Scraping finished in about ".round((time()-$startTime)/60/60, 2)." hours");
     }
 
     public function setCurrentLang($code)
@@ -83,6 +87,37 @@ class ScrapeCommand extends CommandBase
             ->setParam('apfilterredir', 'nonredirects')
             ->setParam('aplimit', 500);
         $this->completeQuery($request, 'query.allpages', [$this, 'getSingleMainspaceWork']);
+    }
+
+    public function getIndexPageMetadata($indexPageName)
+    {
+        $requestProps = FluentRequest::factory()
+            ->setAction('parse')
+            ->setParam('page', $indexPageName)
+            ->setParam('prop', 'text');
+        $pageProps = $this->completeQuery($requestProps, 'parse');
+        $pageHtml = $pageProps['text']['*'];
+        $pageCrawler = new Crawler;
+        $pageCrawler->addHTMLContent($pageHtml, 'UTF-8');
+
+        // Find a possible cover image.
+        $coverRegex = '/\/\/upload\.wikimedia\.org\/(.*?)\.(djvu|pdf)\.jpg/';
+        preg_match($coverRegex, $pageHtml, $matches);
+        $coverImage = isset($matches[0]) ? $matches[0] : null;
+
+        // Find the lowest page quality score. https://en.wikisource.org/wiki/Help:Page_status
+        // Excluding quality-0 because that means 'without text'.
+        $quality = 0;
+        for ($q = 1; $q <= 4; $q++) {
+            $quals = $pageCrawler->filterXPath("//a[contains(@class, 'prp-pagequality-$q')]");
+            if ($quals->count() > 0) {
+                $quality = $q;
+                break;
+            }
+        }
+        $sql = "UPDATE index_pages SET cover_image_url=:cover, quality=:quality WHERE pagename=:pagename AND language_id=:lang";
+        $params = ['cover' => $coverImage, 'quality' => $quality, 'pagename' => $indexPageName, 'lang'=>$this->currentLang->id];
+        $this->db->query($sql, $params);
     }
 
     protected function getSingleMainspaceWork($pagename)
@@ -150,8 +185,8 @@ class ScrapeCommand extends CommandBase
         $authors = explode('/', $microformatVals['ws-author']);
         foreach ($authors as $author) {
             $authorId = $this->getOrCreateRecord('authors', $author);
-            $sqlAuthorJoin = 'INSERT IGNORE INTO `authors_works` SET author_id=:a, work_id=:w';
-            $this->db->query($sqlAuthorJoin, ['a' => $authorId, 'w' => $workId]);
+            $sqlAuthorLink = 'INSERT IGNORE INTO `authors_works` SET author_id=:a, work_id=:w';
+            $this->db->query($sqlAuthorLink, ['a' => $authorId, 'w' => $workId]);
         }
 
         // Link the Index pages (i.e. 'templates' that are in the right NS.).
@@ -160,8 +195,9 @@ class ScrapeCommand extends CommandBase
                 $this->writeDebug(" -- Linking an index page: " . $tpl['*']);
                 $indexPageName = $tpl['*'];
                 $indexPageId = $this->getOrCreateRecord('index_pages', $indexPageName);
-                $sqlAuthorJoin = 'INSERT IGNORE INTO `works_indexes` SET index_page_id=:ip, work_id=:w';
-                $this->db->query($sqlAuthorJoin, ['ip' => $indexPageId, 'w' => $workId]);
+                $sqlInsertIndexes = 'INSERT IGNORE INTO `works_indexes` SET index_page_id=:ip, work_id=:w';
+                $this->db->query($sqlInsertIndexes, ['ip' => $indexPageId, 'w' => $workId]);
+                $this->getIndexPageMetadata($indexPageName);
             }
         }
 

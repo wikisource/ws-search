@@ -40,7 +40,9 @@
                 <th>Authors</th>
                 <th>Year</th>
                 <th>Categories</th>
+                <th>Proofreading status</th>
                 <th>Index pages</th>
+                <th>Cover images</th>
                 <th>Download</th>
             </tr>
         </thead>
@@ -70,12 +72,20 @@
                 <td>
                     <!-- Categories go here -->
                 </td>
+                <td {% if work.quality %}class="quality{{work.quality}}"{% endif %}>
+                    {% if work.quality %}{{work.quality}}{% else %}No index{% endif %}
+                </td>
                 <td>
                     <ol class="list-unstyled">
                     {% for ip in work.indexPages %}
                         <li><a href="https://{{lang}}.wikisource.org/wiki/{{ip.pagename|escape('url')}}">{{ip.pagename}}</a></li>
                     {% endfor %}
                     <ol>
+                </td>
+                <td>
+                    {% for ip in work.indexPages %}
+                        <a href="{{ip.cover_image_url}}"><img src="{{ip.cover_image_url}}" height="30px" class="thumbnail" /></a>
+                    {% endfor %}
                 </td>
                 <td class="nowrap">
 

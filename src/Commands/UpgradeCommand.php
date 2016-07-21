@@ -30,12 +30,12 @@ class UpgradeCommand extends \App\Commands\CommandBase
     {
         $this->write("Deleting all data in the database!");
         $db->query("SET foreign_key_checks = 0");
-        $db->query("DROP TABLE `works_indexes`");
-        $db->query("DROP TABLE `index_pages`");
-        $db->query("DROP TABLE `authors_works`");
-        $db->query("DROP TABLE `authors`");
-        $db->query("DROP TABLE `works`");
-        $db->query("DROP TABLE `languages`");
+        $db->query("DROP TABLE IF EXISTS `works_indexes`");
+        $db->query("DROP TABLE IF EXISTS `index_pages`");
+        $db->query("DROP TABLE IF EXISTS `authors_works`");
+        $db->query("DROP TABLE IF EXISTS `authors`");
+        $db->query("DROP TABLE IF EXISTS `works`");
+        $db->query("DROP TABLE IF EXISTS `languages`");
         $db->query("SET foreign_key_checks = 1");
     }
 
@@ -93,7 +93,9 @@ class UpgradeCommand extends \App\Commands\CommandBase
                 . " `language_id` INT(4) UNSIGNED NOT NULL, "
                 . " FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`) ON DELETE CASCADE, "
                 . " `pagename` VARCHAR(255) $charset NOT NULL, "
-                . " UNIQUE KEY (`language_id`, `pagename`) "
+                . " UNIQUE KEY (`language_id`, `pagename`), "
+                . " `cover_image_url` VARCHAR(255) $charset NULL DEFAULT NULL,"
+                . " `quality` INT(1) NULL DEFAULT NULL "
                 . ");");
         }
         if (!$this->tableExists($db, 'works_indexes')) {
@@ -104,7 +106,7 @@ class UpgradeCommand extends \App\Commands\CommandBase
                 . " FOREIGN KEY (`work_id`) REFERENCES `works` (`id`) ON DELETE CASCADE, "
                 . " `index_page_id` INT(10) UNSIGNED NOT NULL, "
                 . " FOREIGN KEY (`index_page_id`) REFERENCES `index_pages` (`id`) ON DELETE CASCADE,"
-                . " UNIQUE KEY (`index_page_id`, `work_id`) "
+                . " UNIQUE KEY (`index_page_id`, `work_id`)"
                 . ");");
         }
     }

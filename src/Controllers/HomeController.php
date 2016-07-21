@@ -38,12 +38,15 @@ class HomeController extends ControllerBase
         }
 
         // Otherwise, build the queries.
-        $sql = "SELECT DISTINCT works.* FROM works "
+        $sql = "SELECT DISTINCT works.*, MIN(ip.`quality`) AS `quality` FROM works "
             . " JOIN languages l ON l.id=works.language_id "
             . " JOIN authors_works aw ON aw.work_id = works.id "
-            . " JOIN authors ON authors.id = aw.author_id "
+            . " JOIN authors ON authors.id = aw.author_id"
+            . " LEFT JOIN works_indexes wi ON wi.work_id = works.id "
+            . " LEFT JOIN index_pages ip ON wi.index_page_id = ip.id "
             . "WHERE "
-            . " l.code = :lang $sqlTitleWhere $sqlAuthorWhere ";
+            . " l.code = :lang $sqlTitleWhere $sqlAuthorWhere "
+            . "GROUP BY works.id ";
         $works = [];
         foreach ($this->db->query($sql, $params)->fetchAll() as $work) {
 

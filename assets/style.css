@@ -14,3 +14,21 @@ footer { position:absolute; text-align:center; bottom:0; width:100%;
  */
 footer .queries { text-align:left }
 .nowrap { white-space:nowrap }
+
+
+
+.quality4 {
+    background-color: #90ff90 !important;
+}
+.quality3 {
+    background-color: #ffe867 !important;
+}
+.quality2 {
+    background-color: #b0b0ff !important;
+}
+.quality1 {
+    background-color: #ffa0a0 !important;
+}
+.quality0 {
+    background-color: #ddd !important;
+}
