@@ -89,7 +89,7 @@ class ScrapeCommand extends CommandBase
         $this->completeQuery($request, 'query.allpages', [$this, 'getSingleMainspaceWork']);
     }
 
-    public function getIndexPageMetadata($indexPageName)
+    public function getIndexPageMetadata($indexPageName, $workId)
     {
         $requestProps = FluentRequest::factory()
             ->setAction('parse')
@@ -115,9 +115,29 @@ class ScrapeCommand extends CommandBase
                 break;
             }
         }
-        $sql = "UPDATE index_pages SET cover_image_url=:cover, quality=:quality WHERE pagename=:pagename AND language_id=:lang";
-        $params = ['cover' => $coverImage, 'quality' => $quality, 'pagename' => $indexPageName, 'lang'=>$this->currentLang->id];
-        $this->db->query($sql, $params);
+
+        // Save all the metadata (the record already exists before now).
+        if (!empty($coverImage) || !empty($quality)) {
+            $sql = "UPDATE index_pages SET cover_image_url=:cover, quality=:quality WHERE pagename=:pagename AND language_id=:lang";
+            $params = ['cover' => $coverImage, 'quality' => $quality, 'pagename' => $indexPageName, 'lang'=>$this->currentLang->id];
+            $this->db->query($sql, $params);
+        }
+
+        // Get the publisher's name and location.
+        $microformats = ['publisher'=>null, 'place'=>null];
+        foreach (array_keys($microformats) as $microformat) {
+            $el = $pageCrawler->filterXPath("//*[@id='ws-$microformat']");
+            if ($el->count() > 0) {
+                $microformats[$microformat] = $el->html();
+            }
+        }
+        if (!empty($microformats['publisher'])) {
+            $this->db->query('INSERT IGNORE INTO publishers SET name=:publisher, location=:place', $microformats);
+            $publisherSql = 'SELECT id FROM publishers WHERE name=:name';
+            $publisherId = $this->db->query($publisherSql, ['name'=>$microformats['publisher']])->fetchColumn();
+            $this->db->query('UPDATE works SET publisher_id=:p WHERE id=:w', ['w'=>$workId, 'p'=>$publisherId]);
+        }
+
     }
 
     protected function getSingleMainspaceWork($pagename)
@@ -197,7 +217,7 @@ class ScrapeCommand extends CommandBase
                 $indexPageId = $this->getOrCreateRecord('index_pages', $indexPageName);
                 $sqlInsertIndexes = 'INSERT IGNORE INTO `works_indexes` SET index_page_id=:ip, work_id=:w';
                 $this->db->query($sqlInsertIndexes, ['ip' => $indexPageId, 'w' => $workId]);
-                $this->getIndexPageMetadata($indexPageName);
+                $this->getIndexPageMetadata($indexPageName, $workId);
             }
         }
 

@@ -36,6 +36,7 @@ class UpgradeCommand extends \App\Commands\CommandBase
         $db->query("DROP TABLE IF EXISTS `authors`");
         $db->query("DROP TABLE IF EXISTS `works`");
         $db->query("DROP TABLE IF EXISTS `languages`");
+        $db->query("DROP TABLE IF EXISTS `publishers`");
         $db->query("SET foreign_key_checks = 1");
     }
 
@@ -51,6 +52,14 @@ class UpgradeCommand extends \App\Commands\CommandBase
                 . " `index_ns_id` INT(3) NULL DEFAULT NULL "
                 . ");");
         }
+        if (!$this->tableExists($db, 'publishers')) {
+            $this->write("Creating table 'publishers'");
+            $db->query("CREATE TABLE `publishers` ("
+                . " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
+                . " `name` VARCHAR(255) $charset NOT NULL UNIQUE, "
+                . " `location` TEXT $charset NULL DEFAULT NULL"
+                . ");");
+        }
         if (!$this->tableExists($db, 'works')) {
             $this->write("Creating table 'works'");
             $db->query("CREATE TABLE `works` ("
@@ -61,7 +70,9 @@ class UpgradeCommand extends \App\Commands\CommandBase
                 . " `pagename` VARCHAR(255) $charset NOT NULL, "
                 . " `title` VARCHAR(255) $charset NOT NULL, "
                 . " `year` VARCHAR(100) $charset NULL DEFAULT NULL, "
-                . " UNIQUE KEY (`language_id`, `pagename`) "
+                . " UNIQUE KEY (`language_id`, `pagename`),"
+                . " `publisher_id` INT(10) UNSIGNED NULL DEFAULT NULL, "
+                . " FOREIGN KEY (`publisher_id`) REFERENCES `publishers` (`id`) ON DELETE CASCADE"
                 . ");");
         }
         if (!$this->tableExists($db, 'authors')) {

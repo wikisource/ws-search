@@ -53,6 +53,7 @@
                 <th>Title</th>
                 <th>Authors</th>
                 <th>Year</th>
+                <th>Publisher</th>
                 <th>Categories</th>
                 <th>Proofreading status</th>
                 <th>Index pages</th>
@@ -83,6 +84,10 @@
                     <ol>
                 </td>
                 <td>{{work.year}}</td>
+                <td>
+                    {{work.publisher_name}}
+                    {% if work.publisher_name %}({{work.publisher_location}}){% endif %}
+                </td>
                 <td>
                     <!-- Categories go here -->
                 </td>

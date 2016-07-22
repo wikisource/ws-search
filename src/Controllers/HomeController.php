@@ -38,10 +38,16 @@ class HomeController extends ControllerBase
         }
 
         // Otherwise, build the queries.
-        $sql = "SELECT DISTINCT works.*, MIN(ip.`quality`) AS `quality` FROM works "
+        $sql = "SELECT DISTINCT "
+            . "   works.*,"
+            . "   MIN(ip.`quality`) AS `quality`,"
+            . "   p.name AS publisher_name,"
+            . "   p.location AS publisher_location "
+            . " FROM works "
             . " JOIN languages l ON l.id=works.language_id "
             . " JOIN authors_works aw ON aw.work_id = works.id "
             . " JOIN authors ON authors.id = aw.author_id"
+            . " LEFT JOIN publishers p ON p.id=works.publisher_id"
             . " LEFT JOIN works_indexes wi ON wi.work_id = works.id "
             . " LEFT JOIN index_pages ip ON wi.index_page_id = ip.id "
             . "WHERE "
