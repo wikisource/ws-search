@@ -7,7 +7,7 @@ class Config
 
     public static function version()
     {
-        return '0.2.0';
+        return '0.3.0';
     }
 
     public static function configFile()

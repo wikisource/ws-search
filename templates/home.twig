@@ -7,24 +7,38 @@
             hosted on {{langs|length|number_format}}
             <a href="https://wikisource.org/">Wikisource</a> projects.
         </p>
-        <p class="form-group">
-            <label class="control-label">Language:</label>
-            <select name="lang" class="form-control">
-                {% for l in langs %}
-                <option value="{{l.code}}" {% if l.code == lang %}selected{% endif %}>
-                    {{l.code}} &mdash; {{l.label}}
-                </option>
-                {% endfor %}
-            </select>
-        </p>
-        <p class="form-group">
-            <label class="control-label">Title:</label>
-            <input type="text" name="title" class="form-control" value="{{form_vals.title}}" />
-        </p>
-        <p class="form-group">
-            <label class="control-label">Author:</label>
-            <input type="text" name="author" class="form-control" value="{{form_vals.author}}" />
-        </p>
+        <div class="row">
+            <p class="form-group col-md-6">
+                <label class="control-label" for="lang">Language:</label>
+                <select name="lang" class="form-control" id="lang">
+                    {% for l in langs %}
+                    <option value="{{l.code}}" {% if l.code == lang %}selected{% endif %}>
+                        {{l.code}} &mdash; {{l.label}}
+                    </option>
+                    {% endfor %}
+                </select>
+            </p>
+            <p class="form-group col-md-6">
+                <label class="control-label" for="">Output format:</label>
+                <select name="output_format" class="form-control">
+                    <option value="table">Table</option>
+                    <option value="grid">Grid</option>
+                    <option value="csv">CSV</option>
+                    <option value="json">JSON</option>
+                    <option value="opds">OPDS</option>
+                </select>
+            </p>
+        </div>
+        <div class="row">
+            <p class="form-group col-md-6">
+                <label class="control-label">Title contains:</label>
+                <input type="text" name="title" class="form-control" value="{{form_vals.title}}" />
+            </p>
+            <p class="form-group col-md-6">
+                <label class="control-label">Author name contains:</label>
+                <input type="text" name="author" class="form-control" value="{{form_vals.author}}" />
+            </p>
+        </div>
         <p class="form-group">
             <input type="submit" value="Search" class="btn btn-info" />
         </p>

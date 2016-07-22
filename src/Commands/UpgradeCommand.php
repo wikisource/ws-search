@@ -94,7 +94,7 @@ class UpgradeCommand extends \App\Commands\CommandBase
                 . " FOREIGN KEY (`language_id`) REFERENCES `languages` (`id`) ON DELETE CASCADE, "
                 . " `pagename` VARCHAR(255) $charset NOT NULL, "
                 . " UNIQUE KEY (`language_id`, `pagename`), "
-                . " `cover_image_url` VARCHAR(255) $charset NULL DEFAULT NULL,"
+                . " `cover_image_url` TEXT $charset NULL DEFAULT NULL,"
                 . " `quality` INT(1) NULL DEFAULT NULL "
                 . ");");
         }

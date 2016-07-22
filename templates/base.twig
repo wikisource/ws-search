@@ -10,19 +10,18 @@
         <title>
             {{title}}{% if title != site_title %} :: {{site_title}}{% endif %}
         </title>
-        <link href="{{baseurl}}/assets/components/bootstrap-default/css/bootstrap.min.css" rel="stylesheet">
-        <link href="{{baseurl}}/assets/components/bootstrap-datepicker/bootstrap-datepicker-built.css" rel="stylesheet">
-        <link href="{{baseurl}}/assets/style.css" rel="stylesheet">
+        <link rel="stylesheet" href="//tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="{{baseurl}}/assets/style.css" />
         {% block head %}
         {% endblock %}
     </head>
-    <body class="">
+    <body>
         <main class="container-fluid">
 
             <div class="page-header">
                 <h1>
                     <a href="{{baseurl}}">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/114px-Wikisource-logo.svg.png" />
+                        <img src="//upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/114px-Wikisource-logo.svg.png" />
                         {{site_title}}
                     </a>
                 </h1>
@@ -65,11 +64,10 @@
             </div>
         </footer>
 
-        <script src="{{baseurl}}/assets/components/jquery/jquery.min.js"></script>
-        <script src="{{baseurl}}/assets/components/bootstrap/js/bootstrap.min.js"></script>
-        <script src="{{baseurl}}/assets/components/bootstrap-datepicker/bootstrap-datepicker-built.js"></script>
-        <script src="{{baseurl}}/assets/jquery.maskedinput.min.js"></script>
+        <script src="//tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+        <script src="//tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script>
         <script src="{{baseurl}}/assets/scripts.js"></script>
+        
         {% block foot %}
         {% endblock %}
     </body>
