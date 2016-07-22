@@ -135,7 +135,11 @@ class ScrapeCommand extends CommandBase
             $this->db->query('INSERT IGNORE INTO publishers SET name=:publisher, location=:place', $microformats);
             $publisherSql = 'SELECT id FROM publishers WHERE name=:name';
             $publisherId = $this->db->query($publisherSql, ['name'=>$microformats['publisher']])->fetchColumn();
-            $this->db->query('UPDATE works SET publisher_id=:p WHERE id=:w', ['w'=>$workId, 'p'=>$publisherId]);
+            if (!$publisherId) {
+                $this->write("Unable to save publisher for $indexPageName -- publisher: ".$microformats['publisher']);
+            } else {
+                $this->db->query('UPDATE works SET publisher_id=:p WHERE id=:w', ['w'=>$workId, 'p'=>$publisherId]);
+            }
         }
 
     }
