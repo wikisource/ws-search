@@ -12,6 +12,7 @@ class HomeController extends ControllerBase
             'table' => 'Table',
             'csv' => 'CSV',
         ];
+        $outputFormat = 'list';
         if (isset($_GET['output_format'])) {
             $outputFormat = $_GET['output_format'];
         }
