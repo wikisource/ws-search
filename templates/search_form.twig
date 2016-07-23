@@ -1,0 +1,46 @@
+<form method="get" action="{{baseurl}}/" class="well">
+    <p>
+        Use this form to search {{totalWorks|number_format}} works
+        hosted on {{langs|length|number_format}}
+        <a href="https://wikisource.org/">Wikisource</a> projects.
+    </p>
+    <div class="row">
+        <p class="form-group col-md-6">
+            <label class="control-label" for="lang">Language:</label>
+            <select name="lang" class="form-control" id="lang">
+                {% for l in langs %}
+                <option value="{{l.code}}" {% if l.code == lang %}selected{% endif %}>
+                    {{l.code}} &mdash; {{l.label}}
+                </option>
+                {% endfor %}
+            </select>
+        </p>
+        <p class="form-group col-md-6">
+            <label class="control-label" for="">Output format:</label>
+            <select name="output_format" class="form-control">
+                {% for format,label in outputFormats %}
+                <option value="{{format}}" {% if form_vals.output_format == format %}selected{% endif %}>
+                    {{label}}
+                </option>
+                {% endfor %}
+            </select>
+        </p>
+    </div>
+    <div class="row">
+        <p class="form-group col-md-6">
+            <label class="control-label">Title contains:</label>
+            <input type="text" name="title" class="form-control" value="{{form_vals.title}}" />
+        </p>
+        <p class="form-group col-md-6">
+            <label class="control-label">Author name contains:</label>
+            <input type="text" name="author" class="form-control" value="{{form_vals.author}}" />
+        </p>
+    </div>
+    <p class="form-group">
+        <input type="submit" value="Search" class="btn btn-info" />
+    </p>
+</form>
+
+{% if works %}
+<p class="alert alert-success">{{works|length|number_format}} works found.</p>
+{% endif %}

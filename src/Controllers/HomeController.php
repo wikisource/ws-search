@@ -7,7 +7,19 @@ class HomeController extends ControllerBase
 
     public function index()
     {
-        $template = new \App\Template('home.twig');
+        $outputFormats = [
+            'list' => 'List',
+            'table' => 'Table',
+            'csv' => 'CSV',
+        ];
+        if (isset($_GET['output_format'])) {
+            $outputFormat = $_GET['output_format'];
+        }
+        if (!in_array($outputFormat, array_keys($outputFormats))) {
+            $outputFormat = 'list';
+        }
+        $template = new \App\Template($outputFormat.'.twig');
+        $template->outputFormats = $outputFormats;
         $template->title = \App\Config::siteTitle();
         $template->user = $this->user;
         $template->form_vals = $_GET;

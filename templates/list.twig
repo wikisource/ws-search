@@ -1,0 +1,81 @@
+{% extends "base.twig" %}
+{% block content %}
+
+    {% include 'search_form.twig' %}
+
+    <ul class="list-unstyled container list-group">
+    {% for work in works %}
+
+    <li class="media list-group-item">
+        <div class="media-left">
+            {% if work.indexPages.0 %}
+            <a href="{{work.indexPages.0.cover_image_url}}" class="">
+                <img src="{{work.indexPages.0.cover_image_url}}" class="media-object" />
+            </a>
+            {% endif %}
+            {% if not work.indexPages %}
+            <span class="media-object"></span>
+            {% endif %}
+        </div>
+        <div class="media-body">
+            <h2 class="media-heading">
+                <a href="https://{{lang}}.wikisource.org/wiki/{{work.pagename|escape('url')}}">
+                {{work.title}}
+                </a>
+                {% if work.year %}<small>{{work.year}}</small>{% endif %}
+            </h2>
+
+            <ul class="list-unstyled">
+            {% for author in work.authors %}
+                <li>{{author.pagename}}</li>
+            {% endfor %}
+            </ul>
+
+            {% if work.publisher_name %}
+            <p>
+                <em>
+                {{work.publisher_name}}
+                {% if work.publisher_name %}({{work.publisher_location}}){% endif %}
+                </em>
+            </p>
+            {% endif %}
+
+            <dl class="dl-horizontal">
+
+                {% if work.quality and work.quality != 4 %}
+                    <dt>Proofreading required:</dt>
+                    {% for ip in work.indexPages %}
+                        <dd class="quality{{ip.quality}}">
+                        <a href="https://{{lang}}.wikisource.org/wiki/{{ip.pagename|escape('url')}}">{{ip.pagename}}</a>
+                        </dd>
+                    {% endfor %}
+                {% endif %}
+
+                <dt>Read online:</dt>
+                <dd>
+                    <a href="https://{{lang}}.wikisource.org/wiki/{{work.pagename|escape('url')}}">
+                        https://{{lang}}.wikisource.org/wiki/{{work.pagename|escape('url')}}
+                    </a>
+                </dd>
+                <dt>Download:</dt>
+                <dd>
+                    <a href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=epub-3&page={{work.pagename|escape('url')}}" title="Download EPUB">
+                        <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/EPUB_silk_icon.svg/15px-EPUB_silk_icon.svg.png' />
+                        EPUB
+                    </a>
+                </dd>
+                <dd>
+                    <a href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=pdf-a4&page={{work.pagename|escape('url')}}" title="Download PDF">
+                        <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Pdfreaders-f.svg/15px-Pdfreaders-f.svg.png' />
+                        PDF
+                    </a>
+                </dd>
+            </dl>
+
+        </div>
+    </li>
+
+    {% endfor %}
+    </ul>
+
+{% endblock %}
