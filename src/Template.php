@@ -22,7 +22,7 @@ class Template
     /** @var /Twig_Loader_Filesystem */
     protected $loader;
 
-    /** @var string The name of the transient used to store notices. */
+    /** @var string The name of the session variable used to store notices. */
     protected $transientNotices;
 
     /**

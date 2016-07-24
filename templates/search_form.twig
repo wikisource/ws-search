@@ -6,6 +6,16 @@
     </p>
     <div class="row">
         <p class="form-group col-md-6">
+            <label class="control-label">Title contains:</label>
+            <input type="text" name="title" class="form-control" value="{{form_vals.title}}" />
+        </p>
+        <p class="form-group col-md-6">
+            <label class="control-label">Author name contains:</label>
+            <input type="text" name="author" class="form-control" value="{{form_vals.author}}" />
+        </p>
+    </div>
+    <div class="row">
+        <p class="form-group col-md-4">
             <label class="control-label" for="lang">Language:</label>
             <select name="lang" class="form-control" id="lang">
                 {% for l in langs %}
@@ -15,9 +25,9 @@
                 {% endfor %}
             </select>
         </p>
-        <p class="form-group col-md-6">
-            <label class="control-label" for="">Output format:</label>
-            <select name="output_format" class="form-control">
+        <p class="form-group col-md-4">
+            <label class="control-label" for="output_format">Output format:</label>
+            <select name="output_format" id="output_format" class="form-control">
                 {% for format,label in outputFormats %}
                 <option value="{{format}}" {% if form_vals.output_format == format %}selected{% endif %}>
                     {{label}}
@@ -25,15 +35,15 @@
                 {% endfor %}
             </select>
         </p>
-    </div>
-    <div class="row">
-        <p class="form-group col-md-6">
-            <label class="control-label">Title contains:</label>
-            <input type="text" name="title" class="form-control" value="{{form_vals.title}}" />
-        </p>
-        <p class="form-group col-md-6">
-            <label class="control-label">Author name contains:</label>
-            <input type="text" name="author" class="form-control" value="{{form_vals.author}}" />
+        <p class="form-group col-md-4">
+            <label class="control-label" for="has_index">Has index page:</label>
+            <select name="has_index" id="has_index" class="form-control">
+                {% for format,label in hasIndexOptions %}
+                <option value="{{format}}" {% if form_vals.has_index == format %}selected{% endif %}>
+                    {{label}}
+                </option>
+                {% endfor %}
+            </select>
         </p>
     </div>
     <p class="form-group">

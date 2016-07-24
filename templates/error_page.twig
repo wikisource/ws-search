@@ -1,67 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        {# The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags. #}
+{% extends "html_page.twig" %}
 
-        <title>{{title}} :: {{site_title}}</title>
-        <link href="{{baseurl}}/assets/components/bootstrap-default/css/bootstrap.min.css" rel="stylesheet">
-        <link href="{{baseurl}}/assets/components/bootstrap-datepicker/bootstrap-datepicker-built.css" rel="stylesheet">
-        <link href="{{baseurl}}/assets/style.css" rel="stylesheet">
-    </head>
-    <body>
-        <div class="container-fluid">
+{% block bodycontent %}
+<main class="container-fluid">
 
-            <div class="page-header">
-                <h1>
-                    Error {{e.getCode}}
-                    <small class="text-danger">{{e.getMessage|raw}}</small>
-                </h1>
-            </div>
+    <div class="page-header">
+        <h1>
+            Error {{e.getCode}}
+            <small class="text-danger">{{e.getMessage|raw}}</small>
+        </h1>
+    </div>
 
-            {% if debug %}
-                <table class="table table-condensed table-striped">
-                    <thead>
-                        <tr>
-                            <th>File</th>
-                            <th>Line</th>
-                            <th>Function</th>
-                            <th>Class</th>
-                            <th>Type</th>
-                            <th>Args</th>
-                        </tr>
-                    </thead>
-                    {% for trace in e.getTrace %}
-                        <tr>
-                            <td>{{trace.file}}</td>
-                            <td>{{trace.line}}</td>
-                            <td>{{trace.function}}</td>
-                            <td>{{trace.class}}</td>
-                            <td>{{trace.type}}</td>
-                            <td>
-                                <ul>
-                                {% for a in trace.args %}
-                                <li>{{dump(a)}}</li>
-                                {% endfor %}
-                                </ul>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </table>
-            {% endif %}
+    {% if debug %}
+        <table class="table table-condensed table-striped">
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Line</th>
+                    <th>Function</th>
+                    <th>Class</th>
+                    <th>Type</th>
+                    <th>Args</th>
+                </tr>
+            </thead>
+            {% for trace in e.getTrace %}
+                <tr>
+                    <td>{{trace.file}}</td>
+                    <td>{{trace.line}}</td>
+                    <td>{{trace.function}}</td>
+                    <td>{{trace.class}}</td>
+                    <td>{{trace.type}}</td>
+                    <td>
+                        <ul>
+                        {% for a in trace.args %}
+                        <li>{{dump(a)}}</li>
+                        {% endfor %}
+                        </ul>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
 
-            <p>
-                Please consider
-                <a href="https://github.com/samwilson/bibliodata/issues"
-                   title="Let the authors of this software know that something is wrong (opens in a new tab)" target="_blank">
-                    reporting an issue</a> if you are unable to resolve this error.
-                    This is version {{app_version}}.
-            </p>
+    <p>
+        Please consider
+        <a href="https://github.com/wikisource/ws-search/issues"
+           title="Let the authors of this software know that something is wrong (opens in a new tab)" target="_blank">
+            reporting an issue</a> if you are unable to resolve this error.
+            This is version {{app_version}}.
+    </p>
 
-            <p><a href="{{baseurl}}/">&larr; Return to site homepage</a></p>
+    <p><a href="{{baseurl}}/">&larr; Return to site homepage</a></p>
 
-        </div>
-    </body>
-</html>
+</main>
+
+{% endblock %}

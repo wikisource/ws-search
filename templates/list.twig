@@ -51,12 +51,6 @@
                     {% endfor %}
                 {% endif %}
 
-                <dt>Read online:</dt>
-                <dd>
-                    <a href="https://{{lang}}.wikisource.org/wiki/{{work.pagename|escape('url')}}">
-                        https://{{lang}}.wikisource.org/wiki/{{work.pagename|escape('url')}}
-                    </a>
-                </dd>
                 <dt>Download:</dt>
                 <dd>
                     <a href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=epub-3&page={{work.pagename|escape('url')}}" title="Download EPUB">

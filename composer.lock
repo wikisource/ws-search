@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "b66c71d83a816fd58fa93420b8868eb0",
-    "content-hash": "0d7f9c4961231b68992783fbec8eff06",
+    "hash": "c7d880606a8abdae1e14cad2e9b1a6bd",
+    "content-hash": "07ced639ef9eefba2de5f4e7d2c8143e",
     "packages": [
         {
             "name": "addwiki/mediawiki-api-base",
@@ -435,6 +435,21 @@
                 "unit"
             ],
             "time": "2015-03-27 05:04:19"
+        },
+        {
+            "name": "magnusmanske/tooltranslate",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://bitbucket.org/magnusmanske/tooltranslate.git",
+                "reference": "master"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "public_html/tt.php"
+                ]
+            }
         },
         {
             "name": "nayjest/str-case-converter",

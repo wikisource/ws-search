@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {# The above 3 meta tags *must* come first in the head; #}
+        {# any other head content must come *after* these tags. #}
+
+        <title>
+            {{title}}{% if title != site_title %} :: {{site_title}}{% endif %}
+        </title>
+
+        <link rel="stylesheet" href="//tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="{{baseurl}}/assets/style.css" />
+
+        {% block head %}
+        {% endblock %}
+
+    </head>
+    <body>
+
+        {% block bodycontent %}
+        {% endblock %}
+
+        <script src="//tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+        <script src="//tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script>
+        <script src="{{baseurl}}/assets/scripts.js"></script>
+
+        {% block foot %}
+        {% endblock %}
+
+    </body>
+</html>
+

@@ -5,8 +5,15 @@ namespace App\Controllers;
 class HomeController extends ControllerBase
 {
 
+    public function getTranslations()
+    {
+        return $t;
+    }
+
     public function index()
     {
+
+        // Output format.
         $outputFormats = [
             'list' => 'List',
             'table' => 'Table',
@@ -19,15 +26,26 @@ class HomeController extends ControllerBase
         if (!in_array($outputFormat, array_keys($outputFormats))) {
             $outputFormat = 'list';
         }
-        $template = new \App\Template($outputFormat.'.twig');
+
+        // Has index page.
+        $hasIndexOptions = ['na' => 'N/A', 'yes' => 'Yes', 'no' => 'No'];
+        $hasIndex = 'na';
+        if (isset($_GET['has_index']) && in_array($_GET['has_index'], array_keys($hasIndexOptions))) {
+            $hasIndex = $_GET['has_index'];
+        }
+
+        // Assemble the template.
+        $template = new \App\Template($outputFormat . '.twig');
         $template->outputFormats = $outputFormats;
+        $template->hasIndexOptions = $hasIndexOptions;
+        $template->hasIndex = $hasIndex;
         $template->title = \App\Config::siteTitle();
         $template->user = $this->user;
         $template->form_vals = $_GET;
 
         $template->langs = $this->db->query("SELECT DISTINCT languages.* FROM `languages` "
-            . " JOIN works ON works.language_id = languages.id "
-            . " ORDER BY `code`")->fetchAll();
+                . " JOIN works ON works.language_id = languages.id "
+                . " ORDER BY `code`")->fetchAll();
         $template->lang = (!empty($_GET['lang'])) ? $_GET['lang'] : 'en';
         $template->totalWorks = $this->db->query("SELECT COUNT(*) FROM works")->fetchColumn();
 
@@ -44,8 +62,16 @@ class HomeController extends ControllerBase
             $params['author'] = '%' . $_GET['author'] . '%';
         }
 
+        // Has index page.
+        $sqlHasIndex = '';
+        if ($hasIndex === 'yes') {
+            $sqlHasIndex = ' AND index_pages.id IS NOT NULL ';
+        } elseif ($hasIndex === 'no') {
+            $sqlHasIndex = ' AND index_pages.id IS NULL ';
+        }
+
         // If nothing has been searched, return the empty template.
-        if (!$sqlTitleWhere && !$sqlAuthorWhere) {
+        if (!$sqlTitleWhere && !$sqlAuthorWhere && !$sqlHasIndex) {
             echo $template->render();
             return;
         }
@@ -53,7 +79,7 @@ class HomeController extends ControllerBase
         // Otherwise, build the queries.
         $sql = "SELECT DISTINCT "
             . "   works.*,"
-            . "   MIN(ip.`quality`) AS `quality`,"
+            . "   MIN(index_pages.quality) AS quality,"
             . "   p.name AS publisher_name,"
             . "   p.location AS publisher_location "
             . " FROM works "
@@ -62,9 +88,9 @@ class HomeController extends ControllerBase
             . " JOIN authors ON authors.id = aw.author_id"
             . " LEFT JOIN publishers p ON p.id=works.publisher_id"
             . " LEFT JOIN works_indexes wi ON wi.work_id = works.id "
-            . " LEFT JOIN index_pages ip ON wi.index_page_id = ip.id "
+            . " LEFT JOIN index_pages ON wi.index_page_id = index_pages.id "
             . "WHERE "
-            . " l.code = :lang $sqlTitleWhere $sqlAuthorWhere "
+            . " l.code = :lang $sqlTitleWhere $sqlAuthorWhere $sqlHasIndex "
             . "GROUP BY works.id ";
         $works = [];
         foreach ($this->db->query($sql, $params)->fetchAll() as $work) {
