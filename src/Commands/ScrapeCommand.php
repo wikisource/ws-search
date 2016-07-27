@@ -131,7 +131,6 @@ class ScrapeCommand extends CommandBase
                 $microformats[$microformat] = strip_tags($el->html());
             }
         }
-        print_r($microformats);
         if (!empty($microformats['publisher'])) {
             $this->db->query('INSERT IGNORE INTO publishers SET name=:publisher, location=:place', $microformats);
             $publisherSql = 'SELECT id FROM publishers WHERE name=:name';
