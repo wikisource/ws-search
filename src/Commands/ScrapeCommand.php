@@ -128,9 +128,10 @@ class ScrapeCommand extends CommandBase
         foreach (array_keys($microformats) as $microformat) {
             $el = $pageCrawler->filterXPath("//*[@id='ws-$microformat']");
             if ($el->count() > 0) {
-                $microformats[$microformat] = $el->html();
+                $microformats[$microformat] = strip_tags($el->html());
             }
         }
+        print_r($microformats);
         if (!empty($microformats['publisher'])) {
             $this->db->query('INSERT IGNORE INTO publishers SET name=:publisher, location=:place', $microformats);
             $publisherSql = 'SELECT id FROM publishers WHERE name=:name';
