@@ -5,10 +5,28 @@ namespace App;
 class Text
 {
 
+    /**
+     * Escape various characters, and wrap cell values in quotes where required.
+     * Also, for multi-valued inputs (i.e. arrays), escape them and also concatenate them with pipes.
+     *
+     * @param string|array $str The input string or array of strings.
+     * @return string
+     */
+    public static function csvCell($str)
+    {
+        if (is_array($str)) {
+            return self::csvCell(join("|", $str));
+        }
+        if (is_numeric($str)) {
+            return $str;
+        }
+        return '"' . str_replace(array("\n", "\r", '"'), array('\\n', "\\r", '""'), $str) . '"';
+    }
+
     public static function snakecase($str, $glue = '_')
     {
         $patterns = ['/([a-z\d])([A-Z])/', '/([^_-])([A-Z][a-z])/'];
-        return strtolower(preg_replace($patterns, '$1'.$glue.'$2', $str));
+        return strtolower(preg_replace($patterns, '$1' . $glue . '$2', $str));
     }
 
     /**

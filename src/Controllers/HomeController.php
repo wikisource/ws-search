@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Text;
+
 class HomeController extends ControllerBase
 {
 
@@ -111,9 +113,43 @@ class HomeController extends ControllerBase
 
             $works[] = $work;
         }
-        //header('content-type:text/plain');print_r($works);exit();
 
         $template->works = $works;
-        echo $template->render();
+        if ($outputFormat == 'csv') {
+            $this->outputCsv($template->lang, $works);
+        } else {
+            echo $template->render();
+        }
+    }
+
+    public function outputCsv($langCode, $works)
+    {
+        $out = "Wikidata,Page name,Title,Authors,Year,Publisher,Categories,Proofreading status,Index pages,Cover images\n";
+        foreach ($works as $work) {
+            $authors = [];
+            foreach ($work->authors as $author) {
+                $authors[] = $author->pagename;
+            }
+            $indexPages = [];
+            $coverUrls = [];
+            if (isset($work->indexPages)) {
+                foreach ($work->indexPages as $indexPage) {
+                    $indexPages[] = $indexPage->pagename;
+                    $coverUrls[] = $indexPage->cover_image_url;
+                }
+            }
+            $out .= $work->wikidata_item . ","
+                . Text::csvCell($work->pagename) . ","
+                . Text::csvCell($work->title) . ","
+                . Text::csvCell($authors) . ","
+                . Text::csvCell($work->year) . ","
+                . Text::csvCell($work->publisher_name) . ","
+                . Text::csvCell($work->publisher_location) . ","
+                . Text::csvCell($work->quality) . ","
+                . Text::csvCell($indexPages) . ","
+                . Text::csvCell($coverUrls)."\n";
+        }
+        //header("content-type:text/plain");echo $out;exit();
+        $this->sendFile('csv', 'text/csv', $out, "wikisource_$langCode");
     }
 }
