@@ -253,7 +253,11 @@ class ScrapeCommand extends CommandBase
     {
         $params = ['pagename' => $pagename, 'l' => $this->currentLang->id];
         $sqlSelect = 'SELECT `id` FROM `works` WHERE `language_id`=:l AND `pagename`=:pagename';
-        return $this->db->query($sqlSelect, $params)->fetchColumn();
+        $workId = $this->db->query($sqlSelect, $params)->fetchColumn();
+        if (!is_numeric($workId)) {
+            throw new \Exception("Unable to get ID of $pagename");
+        }
+        return $workId;
     }
 
     public function completeQuery(FluentRequest $request, $resultKey, $callback = false)
