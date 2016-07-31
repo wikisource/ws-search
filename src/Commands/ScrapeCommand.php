@@ -203,9 +203,14 @@ class ScrapeCommand extends CommandBase
             'year' => $microformatVals['ws-year'],
         ];
         $this->db->query($sql, $insertParams);
+        $workId = $this->getWorkId($rootPageName);
+        if (!is_numeric($workId)) {
+            // Eh? What's going on here then?
+            $this->write("Failed to save pagename: $pagename");
+            return false;
+        }
 
         // Save the authors.
-        $workId = $this->getWorkId($rootPageName);
         $authors = explode('/', $microformatVals['ws-author']);
         foreach ($authors as $author) {
             $authorId = $this->getOrCreateRecord('authors', $author);
