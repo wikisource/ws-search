@@ -95,8 +95,10 @@ class Database
                 }
             }
         } catch (\PDOException $e) {
-            throw new \Exception($e->getMessage() . ' -- Unable to execute SQL: <code>' . $sql . '</code> Parameters: ' . print_r($params,
-                true));
+            $msg = $e->getMessage() . ' -- Unable to execute SQL: '
+                . ' <code>' . $sql . '</code> '
+                . ' Parameters: ' . var_export($params, true);
+            throw new \Exception($msg);
         }
 
         self::$queries[] = ['sql' => $sql, 'params' => $params];
