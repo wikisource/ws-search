@@ -206,8 +206,7 @@ class ScrapeCommand extends CommandBase
         $workId = $this->getWorkId($rootPageName);
         if (!is_numeric($workId)) {
             // Eh? What's going on here then?
-            $this->write("Failed to save pagename: $pagename");
-            return false;
+            throw new \Exception("Failed to save pagename: $pagename -- params were: ".print_r($insertParams, true));
         }
 
         // Save the authors.
@@ -279,7 +278,12 @@ class ScrapeCommand extends CommandBase
             // If a callback is specified, call it for each of the current result set.
             if (is_callable($callback)) {
                 foreach ($restultingData as $datum) {
-                    call_user_func($callback, $datum['title']);
+                    try {
+                        call_user_func($callback, $datum['title']);
+                    } catch (\Exception $e) {
+                        // If anything goes wrong, report it and carry on.
+                        $this->write('Error with '.$datum['title'].' -- '.$e->getMessage());
+                    }
                 }
             }
 
