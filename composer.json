@@ -19,27 +19,9 @@
         "addwiki/mediawiki-api-base": "2.*",
         "corneltek/getoptionkit": "2.*",
         "dflydev/dot-access-data": "^1.0",
-        "symfony/dom-crawler": "^3.1",
-        "magnusmanske/tooltranslate": "1.*"
+        "symfony/dom-crawler": "^3.1"
     },
     "require-dev": {
         "symfony/var-dumper": "3.*"
-    },
-    "repositories": [
-        {
-            "type": "package",
-            "package": {
-                "name": "magnusmanske/tooltranslate",
-                "version": "1.0.0",
-                "source": {
-                    "type": "git",
-                    "url": "https://bitbucket.org/magnusmanske/tooltranslate.git",
-                    "reference": "master"
-                },
-                "autoload": {
-                    "files": ["public_html/tt.php"]
-                }
-            }
-        }
-    ]
+    }
 }

@@ -147,6 +147,7 @@ class ScrapeCommand extends CommandBase
     protected function getSingleMainspaceWork($pagename)
     {
         $this->writeDebug("Importing from {$this->currentLang->code}: " . $pagename);
+        sleep(2);
 
         // Retrieve the page text, Index links (i.e. templates in the right NS), and categories.
         $requestParse = FluentRequest::factory()
