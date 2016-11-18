@@ -89,8 +89,14 @@ class WorkSaver {
 
 			// Quality and image.
 			if ( $indexPage->getQuality() ) {
-				$sql = "UPDATE index_pages SET quality=:quality WHERE id = :id";
-				$params = [ 'id' => $indexPageId, 'quality' => $indexPage->getQuality() ];
+				$sql = "UPDATE index_pages "
+					. " SET cover_image_url=:image, quality=:quality "
+					. " WHERE id = :id ";
+				$params = [
+					'image' => $indexPage->getImage(),
+					'quality' => $indexPage->getQuality(),
+					'id' => $indexPageId,
+				];
 				$this->db->query( $sql, $params );
 			}
 

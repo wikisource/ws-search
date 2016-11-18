@@ -1042,16 +1042,16 @@
         },
         {
             "name": "wikisource/api",
-            "version": "1.0.1",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikisource/api.git",
-                "reference": "2a0323bbc00f3613ef14ad756856eefdaee72bcf"
+                "reference": "a1c1c91692c9355e90cd079b2a831a261ead258e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikisource/api/zipball/2a0323bbc00f3613ef14ad756856eefdaee72bcf",
-                "reference": "2a0323bbc00f3613ef14ad756856eefdaee72bcf",
+                "url": "https://api.github.com/repos/wikisource/api/zipball/a1c1c91692c9355e90cd079b2a831a261ead258e",
+                "reference": "a1c1c91692c9355e90cd079b2a831a261ead258e",
                 "shasum": ""
             },
             "require": {
@@ -1081,7 +1081,7 @@
                 "GPL-2.0+"
             ],
             "description": "A PHP API to Wikisources (all languages).",
-            "time": "2016-11-14 01:57:08"
+            "time": "2016-11-18 08:11:07"
         },
         {
             "name": "yohang/calendr",
