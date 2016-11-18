@@ -39,7 +39,7 @@
                     {% for author in work.authors %}
                         <li>{{author.pagename}}</li>
                     {% endfor %}
-                    <ol>
+                    </ol>
                 </td>
                 <td>{{work.year}}</td>
                 <td>
@@ -57,11 +57,15 @@
                     {% for ip in work.indexPages %}
                         <li><a href="https://{{lang}}.wikisource.org/wiki/{{ip.pagename|escape('url')}}">{{ip.pagename}}</a></li>
                     {% endfor %}
-                    <ol>
+                    </ol>
                 </td>
                 <td>
                     {% for ip in work.indexPages %}
+                        {% if ip.cover_image_url %}
                         <a href="{{ip.cover_image_url}}"><img src="{{ip.cover_image_url}}" height="30px" class="thumbnail" /></a>
+                        {% else %}
+                            <abbr class="text-danger" title="No cover image found">X</abbr>
+                        {% endif %}
                     {% endfor %}
                 </td>
                 <td class="nowrap">

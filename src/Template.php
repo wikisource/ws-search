@@ -2,173 +2,159 @@
 
 namespace App;
 
-/**
- * @property string $controller The (lowercase) name of the current controller.
- * @property \App\DB\Table $table The current table.
- * @property \App\DB\Table[] $tables The full list of tables.
- */
-class Template
-{
+use App\Database\Database;
 
-    /** @var string */
-    protected $templateName;
+class Template {
 
-    /** @var string */
-    protected $templateString;
+	/** @var string */
+	protected $templateName;
 
-    /** @var string[] */
-    protected $data;
+	/** @var string */
+	protected $templateString;
 
-    /** @var /Twig_Loader_Filesystem */
-    protected $loader;
+	/** @var string[] */
+	protected $data;
 
-    /** @var string The name of the session variable used to store notices. */
-    protected $transientNotices;
+	/** @var /Twig_Loader_Filesystem */
+	protected $loader;
 
-    /**
-     * Create a new template either with a file-based Twig template, or a Twig string.
-     * @global type $wpdb
-     * @param string|false $templateName
-     * @param string|false $templateString
-     */
-    public function __construct($templateName = false, $templateString = false)
-    {
-        $this->templateName = $templateName;
-        $this->templateString = $templateString;
-        $this->transientNotices = 'notices';
-        $notices = isset($_SESSION[$this->transientNotices]) ? $_SESSION[$this->transientNotices] : array();
-        $this->data = array(
-            'app_version' => Config::version(),
-            'notices' => $notices,
-            'baseurl' => Config::baseUrl(),
-            'debug' => Config::debug(),
-            'site_title' => Config::siteTitle(),
-        );
-        $this->loader = new \Twig_Loader_Filesystem([__DIR__ . '/../templates']);
-    }
+	/** @var string The name of the session variable used to store notices. */
+	protected $transientNotices;
 
-    public function setTemplateName($newName)
-    {
-        $this->templateName = $newName;
-    }
+	/**
+	 * Create a new template either with a file-based Twig template, or a Twig string.
+	 * @param string|boolean $templateName
+	 * @param string|boolean $templateString
+	 */
+	public function __construct( $templateName = false, $templateString = false ) {
+		$this->templateName = $templateName;
+		$this->templateString = $templateString;
+		$this->transientNotices = 'notices';
+		$notices = isset( $_SESSION[$this->transientNotices] ) ? $_SESSION[$this->transientNotices] : [];
+		$this->data = [
+			'app_version' => Config::version(),
+			'notices' => $notices,
+			'baseurl' => Config::baseUrl(),
+			'debug' => Config::debug(),
+			'site_title' => Config::siteTitle(),
+		];
+		$this->loader = new \Twig_Loader_Filesystem( [ __DIR__ . '/../templates' ] );
+	}
 
-    /**
-     * Get the Filesystem template loader.
-     * @return \Twig_Loader_Filesystem
-     */
-    public function getLoader()
-    {
-        return $this->loader;
-    }
+	public function setTemplateName( $newName ) {
+		$this->templateName = $newName;
+	}
 
-    /**
-     * Get a list of templates in a given directory, across all registered template paths.
-     * @param string $directory
-     */
-    public function getTemplates($directory)
-    {
-        $templates = array();
-        foreach ($this->getLoader()->getPaths() as $path) {
-            $dir = $path . '/' . ltrim($directory, '/');
-            foreach (preg_grep('/^[^\.].*\.(twig|html)$/', scandir($dir)) as $file) {
-                $templates[] = $directory . '/' . $file;
-            }
-        }
-        return $templates;
-    }
+	/**
+	 * Get the Filesystem template loader.
+	 * @return \Twig_Loader_Filesystem
+	 */
+	public function getLoader() {
+		return $this->loader;
+	}
 
-    public function __set($name, $value)
-    {
-        $this->data[$name] = $value;
-    }
+	/**
+	 * Get a list of templates in a given directory, across all registered template paths.
+	 * @param string $directory
+	 * @return string[]
+	 */
+	public function getTemplates( $directory ) {
+		$templates = [];
+		foreach ( $this->getLoader()->getPaths() as $path ) {
+			$dir = $path . '/' . ltrim( $directory, '/' );
+			foreach ( preg_grep( '/^[^\.].*\.(twig|html)$/', scandir( $dir ) ) as $file ) {
+				$templates[] = $directory . '/' . $file;
+			}
+		}
+		return $templates;
+	}
 
-    /**
-     * Find out whether a given item of template data is set.
-     *
-     * @param string $name The property name.
-     * @return boolean
-     */
-    public function __isset($name)
-    {
-        return isset($this->data[$name]);
-    }
+	public function __set( $name, $value ) {
+		$this->data[$name] = $value;
+	}
 
-    /**
-     * Get an item from this template's data.
-     *
-     * @param string $name
-     * @return mixed
-     */
-    public function __get($name)
-    {
-        return $this->data[$name];
-    }
+	/**
+	 * Find out whether a given item of template data is set.
+	 *
+	 * @param string $name The property name.
+	 * @return boolean
+	 */
+	public function __isset( $name ) {
+		return isset( $this->data[$name] );
+	}
 
-    /**
-     * Add a notice. All notices are saved to a Transient, which is deleted when
-     * the template is rendered but otherwise available to all subsequent
-     * instances of the Template class.
-     * @param string $type Either 'updated' or 'error'.
-     * @param string $message The message to display.
-     */
-    public function addNotice($type, $message)
-    {
-        $this->data['notices'][] = array(
-            'type' => $type,
-            'message' => $message,
-        );
-        if (isset($_SESSION)) {
-            $_SESSION[$this->transientNotices] = $this->data['notices'];
-        }
-    }
+	/**
+	 * Get an item from this template's data.
+	 *
+	 * @param string $name
+	 * @return mixed
+	 */
+	public function __get( $name ) {
+		return $this->data[$name];
+	}
 
-    /**
-     * Render the template and return it.
-     * @return void
-     */
-    public function __toString()
-    {
-        return $this->render();
-    }
+	/**
+	 * Add a notice. All notices are saved to a Transient, which is deleted when
+	 * the template is rendered but otherwise available to all subsequent
+	 * instances of the Template class.
+	 * @param string $type Either 'updated' or 'error'.
+	 * @param string $message The message to display.
+	 */
+	public function addNotice( $type, $message ) {
+		$this->data['notices'][] = [
+			'type' => $type,
+			'message' => $message,
+		];
+		if ( isset( $_SESSION ) ) {
+			$_SESSION[$this->transientNotices] = $this->data['notices'];
+		}
+	}
 
-    /**
-     * Render the template and return the output.
-     * @return string
-     */
-    public function render()
-    {
-        if (isset($_SESSION[$this->transientNotices])) {
-            unset($_SESSION[$this->transientNotices]);
-        }
-        $twig = new \Twig_Environment($this->loader);
+	/**
+	 * Render the template and return it.
+	 * @return string
+	 */
+	public function __toString() {
+		return $this->render();
+	}
 
-        // Add titlecase filter.
-        $titlecase_filter = new \Twig_SimpleFilter('titlecase', '\\App\\Text::titlecase');
-        $twig->addFilter($titlecase_filter);
+	/**
+	 * Render the template and return the output.
+	 * @return string
+	 */
+	public function render() {
+		if ( isset( $_SESSION[$this->transientNotices] ) ) {
+			unset( $_SESSION[$this->transientNotices] );
+		}
+		$twig = new \Twig_Environment( $this->loader );
 
-        // Add strtolower filter.
-        $strtolower_filter = new \Twig_SimpleFilter('strtolower', function ($str) {
-            if (is_array($str)) {
-                return array_map('strtolower', $str);
-            } else {
-                return strtolower($str);
-            }
-        });
-        $twig->addFilter($strtolower_filter);
+		// Add titlecase filter.
+		$titlecase_filter = new \Twig_SimpleFilter( 'titlecase', '\\App\\Text::titlecase' );
+		$twig->addFilter( $titlecase_filter );
 
-        // Enable debugging.
-        if (Config::debug()) {
-            $this->queries = Database::getQueries();
-            $twig->enableDebug();
-            $twig->addExtension(new \Twig_Extension_Debug());
-        }
+		// Add strtolower filter.
+		$strtolower_filter = new \Twig_SimpleFilter( 'strtolower', function ( $str ) {
+			if ( is_array( $str ) ) {
+				return array_map( 'strtolower', $str );
+			} else {
+				return strtolower( $str );
+			}
+		} );
+		$twig->addFilter( $strtolower_filter );
 
-        // Render the template.
-        if (!empty($this->templateString)) {
-            $template = $twig->createTemplate($this->templateString);
-        } else {
-            $template = $twig->loadTemplate($this->templateName);
-        }
-        return $template->render($this->data);
-    }
+		// Enable debugging.
+		if ( Config::debug() ) {
+			$this->queries = Database::getQueries();
+			$twig->enableDebug();
+			$twig->addExtension( new \Twig_Extension_Debug() );
+		}
+
+		// Render the template.
+		if ( !empty( $this->templateString ) ) {
+			$template = $twig->createTemplate( $this->templateString );
+		} else {
+			$template = $twig->loadTemplate( $this->templateName );
+		}
+		return $template->render( $this->data );
+	}
 }

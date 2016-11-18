@@ -11,17 +11,29 @@
         "classmap": ["tests/TestBase.php"]
     },
     "require": {
-        "nikic/fast-route": "dev-master",
-        "twig/twig": "1.*",
-        "yohang/calendr": "1.*",
+        "wikisource/api": "^1.0",
+        "addwiki/mediawiki-api": "dev-master",
+        "addwiki/mediawiki-api-base": "2.*",
+        "nikic/fast-route": "^1.0",
+        "twig/twig": "^1.0",
+        "yohang/calendr": "^1.0",
         "eloquent/asplode": "^2.0",
         "nayjest/str-case-converter": "^1.0",
-        "addwiki/mediawiki-api-base": "2.*",
         "corneltek/getoptionkit": "2.*",
         "dflydev/dot-access-data": "^1.0",
-        "symfony/dom-crawler": "^3.1"
+        "symfony/dom-crawler": "^3.1",
+        "tedivm/stash": "^0.14.1"
     },
     "require-dev": {
+        "mediawiki/mediawiki-codesniffer": "dev-master",
         "symfony/var-dumper": "3.*"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "php -r \"file_exists('config.php') || copy('config.dist.php', 'config.php');\""
+        ],
+        "post-update-cmd": [
+            "php -r \"file_exists('config.php') || copy('config.dist.php', 'config.php');\""
+        ]
     }
 }

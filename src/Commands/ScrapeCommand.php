@@ -2,354 +2,246 @@
 
 namespace App\Commands;
 
+use App\Database\Database;
+use App\Database\WorkSaver;
 use Mediawiki\Api\MediawikiApi;
 use Mediawiki\Api\FluentRequest;
 use GetOptionKit\OptionCollection;
 use Dflydev\DotAccessData\Data;
 use Symfony\Component\DomCrawler\Crawler;
+use Wikisource\Api\Wikisource;
+use Wikisource\Api\WikisourceApi;
 
-class ScrapeCommand extends CommandBase
-{
+class ScrapeCommand extends CommandBase {
 
-    /** @var \App\Database */
-    private $db;
+	/** @var Database */
+	private $db;
 
-    /**
-     * @var \stdClass The database ID ('id'), text code ('code'), and Index NS ID ('index_ns_id')
-     * of the language that is currently being processed.
-     */
-    private $currentLang;
+	/** @var WikisourceApi */
+	private $wsApi;
 
-    public function getCliOptions()
-    {
-        $options = new OptionCollection;
-        $options->add('l|lang?string', 'The language code of the Wikisource to scrape');
-        $options->add('t|title?string', 'The title of a single page to scrape, must be combined with --lang');
-        $options->add('langs', 'Retrieve metadata about all language Wikisources');
-        return $options;
-    }
+	/**
+	 * @var \stdClass The database ID ('id'), text code ('code'), and Index NS ID ('index_ns_id')
+	 * of the language that is currently being processed.
+	 */
+	private $currentLang;
 
-    public function run()
-    {
-        $startTime = time();
+	public function getCliOptions() {
+		$options = new OptionCollection;
+		$options->add( 'l|lang?string', 'The language code of the Wikisource to scrape' );
+		$options->add( 't|title?string', 'The title of a single page to scrape, must be combined with --lang' );
+		$options->add( 'langs', 'Retrieve metadata about all language Wikisources' );
+		return $options;
+	}
 
-        $this->db = new \App\Database;
-        if ($this->cliOptions->langs) {
-            $this->getWikisourceLangEditions();
-        }
+	public function run() {
+		$startTime = time();
 
-        // All works in one language Wikisource.
-        if ($this->cliOptions->lang && !$this->cliOptions->title) {
-            $langCode = $this->cliOptions->lang;
-            $this->setCurrentLang($langCode);
-            $this->getAllWorks($langCode);
-        }
+		$this->db = new Database;
+		$this->wsApi = new WikisourceApi();
 
-        // A single work from a single Wikisource.
-        if ($this->cliOptions->title) {
-            $langCode = $this->cliOptions->lang;
-            if (!$langCode) {
-                $this->write("You must also specify the Wikisource language code, with --lang=xx");
-                exit(1);
-            }
-            $this->setCurrentLang($langCode);
-            $this->getSingleMainspaceWork($this->cliOptions->title);
-        }
+		if ( $this->cliOptions->langs ) {
+			$this->getWikisourceLangEditions();
+		}
 
-        // If nothing else is specified, scrape everything.
-        if (empty($this->cliOptions->toArray())) {
-            $langCodes = $this->getWikisourceLangEditions();
-            foreach ($langCodes as $lc) {
-                $this->setCurrentLang($lc);
-                $this->getAllWorks($lc);
-            }
-        }
+		// All works in one language Wikisource.
+		if ( $this->cliOptions->lang && !$this->cliOptions->title ) {
+			$langCode = $this->cliOptions->lang;
+			$this->setCurrentLang( $langCode );
+			$this->getAllWorks( $langCode );
+		}
 
-        $this->write("Scraping finished in about ".round((time()-$startTime)/60/60, 2)." hours");
-    }
+		// A single work from a single Wikisource.
+		if ( $this->cliOptions->title ) {
+			$langCode = $this->cliOptions->lang;
+			if ( !$langCode ) {
+				$this->write( "You must also specify the Wikisource language code, with --lang=xx" );
+				exit( 1 );
+			}
+			$this->setCurrentLang( $langCode );
+			$this->getSingleMainspaceWork( $this->cliOptions->title );
+		}
 
-    public function setCurrentLang($code)
-    {
-        $sql = "SELECT * FROM languages WHERE code=:code";
-        $this->currentLang = $this->db->query($sql, ['code' => $code])->fetch();
-        if (!$this->currentLang) {
-            throw new \Exception("Unable to load language '$code'");
-        }
-    }
+		// If nothing else is specified, scrape everything.
+		if ( empty( $this->cliOptions->toArray() ) ) {
+			$langCodes = $this->getWikisourceLangEditions();
+			foreach ( $langCodes as $lc ) {
+				$this->setCurrentLang( $lc );
+				$this->getAllWorks( $lc );
+			}
+		}
 
-    private function getAllWorks($langCode)
-    {
-        $this->write("Getting works from '$langCode' Wikisource.");
-        $request = FluentRequest::factory()
-            ->setAction('query')
-            ->setParam('list', 'allpages')
-            ->setParam('apnamespace', 0)
-            ->setParam('apfilterredir', 'nonredirects')
-            ->setParam('aplimit', 500);
-        $this->completeQuery($request, 'query.allpages', [$this, 'getSingleMainspaceWork']);
-    }
+		$this->write( "Scraping finished in about ".round( ( time()-$startTime )/60/60, 2 )." hours" );
+	}
 
-    public function getIndexPageMetadata($indexPageName, $workId)
-    {
-        $requestProps = FluentRequest::factory()
-            ->setAction('parse')
-            ->setParam('page', $indexPageName)
-            ->setParam('prop', 'text');
-        $pageProps = $this->completeQuery($requestProps, 'parse');
-        $pageHtml = $pageProps['text']['*'];
-        $pageCrawler = new Crawler;
-        $pageCrawler->addHTMLContent($pageHtml, 'UTF-8');
+	public function setCurrentLang( $code ) {
+		$sql = "SELECT * FROM languages WHERE code=:code";
+		$this->currentLang = $this->db->query( $sql, [ 'code' => $code ] )->fetch();
+		if ( !$this->currentLang ) {
+			throw new \Exception( "Unable to load language '$code'" );
+		}
+	}
 
-        // Find a possible cover image.
-        $coverRegex = '/\/\/upload\.wikimedia\.org\/(.*?)\.(djvu|pdf)\.jpg/';
-        preg_match($coverRegex, $pageHtml, $matches);
-        $coverImage = isset($matches[0]) ? $matches[0] : null;
+	private function getAllWorks( $langCode ) {
+		$this->write( "Getting works from '$langCode' Wikisource." );
+		$request = FluentRequest::factory()
+			->setAction( 'query' )
+			->setParam( 'list', 'allpages' )
+			->setParam( 'apnamespace', 0 )
+			->setParam( 'apfilterredir', 'nonredirects' )
+			->setParam( 'aplimit', 500 );
+		$this->completeQuery( $request, 'query.allpages', [ $this, 'getSingleMainspaceWork' ] );
+	}
 
-        // Find the lowest page quality score. https://en.wikisource.org/wiki/Help:Page_status
-        // Excluding quality-0 because that means 'without text'.
-        $quality = 0;
-        for ($q = 1; $q <= 4; $q++) {
-            $quals = $pageCrawler->filterXPath("//a[contains(@class, 'prp-pagequality-$q')]");
-            if ($quals->count() > 0) {
-                $quality = $q;
-                break;
-            }
-        }
+	protected function getSingleMainspaceWork( $pageName ) {
+		$this->writeDebug( "Importing from {$this->currentLang->code}: " . $pageName );
+		$ws = $this->wsApi->fetchWikisource( $this->currentLang->code );
+		$work = $ws->getWork( $pageName );
+		$workSaver = new WorkSaver();
+		$workSaver->save( $work );
 
-        // Save all the metadata (the record already exists before now).
-        if (!empty($coverImage) || !empty($quality)) {
-            $sql = "UPDATE index_pages SET cover_image_url=:cover, quality=:quality WHERE pagename=:pagename AND language_id=:lang";
-            $params = ['cover' => $coverImage, 'quality' => $quality, 'pagename' => $indexPageName, 'lang'=>$this->currentLang->id];
-            $this->db->query($sql, $params);
-        }
+// // Retrieve the page text, Index links (i.e. templates in the right NS), and categories.
+// $requestParse = FluentRequest::factory()
+// ->setAction('parse')
+// ->setParam('page', $pagename)
+// ->setParam('prop', 'text|templates|categories');
+// $pageParse = new Data($this->completeQuery($requestParse, 'parse'));
+// // Normalize the pagename.
+// $pagename = $pageParse->get('title');
+//
+// // Get the Wikidata Item.
+// $requestProps = FluentRequest::factory()
+// ->setAction('query')
+// ->setParam('titles', $pagename)
+// ->setParam('prop', 'pageprops')
+// ->setParam('ppprop', 'wikibase_item');
+// $pageProps = $this->completeQuery($requestProps, 'query.pages');
+// $pagePropsSingle = new Data(array_shift($pageProps));
+// $wikibaseItem = $pagePropsSingle->get('pageprops.wikibase_item');
+//
+// // If this is a subpage, determine the mainpage.
+// if (strpos($pagename, '/') !== false) {
+// $rootPageName = substr($pagename, 0, strpos($pagename, '/'));
+// } else {
+// $rootPageName = $pagename;
+// }
+//
+// // Deal with the data from within the page text.
+// // Note the slightly odd way of ensuring the HTML content is loaded as UTF8.
+// $pageHtml = $pageParse->get('text.*');
+// $pageCrawler = new Crawler;
+// $pageCrawler->addHTMLContent("<div>$pageHtml</div>", 'UTF-8');
+// // Pull the microformatted-defined attributes.
+// $microformatIds = ['ws-title', 'ws-author', 'ws-year'];
+// $microformatVals = [];
+// foreach ($microformatIds as $i) {
+// $el = $pageCrawler->filterXPath("//*[@id='$i']");
+// $microformatVals[$i] = ($el->count() > 0) ? $el->text() : '';
+// }
 
-        // Get the publisher's name and location.
-        $microformats = ['publisher'=>null, 'place'=>null];
-        foreach (array_keys($microformats) as $microformat) {
-            $el = $pageCrawler->filterXPath("//*[@id='ws-$microformat']");
-            if ($el->count() > 0) {
-                $microformats[$microformat] = strip_tags($el->html());
-            }
-        }
-        if (!empty($microformats['publisher'])) {
-            $this->db->query('INSERT IGNORE INTO publishers SET name=:publisher, location=:place', $microformats);
-            $publisherSql = 'SELECT id FROM publishers WHERE name=:name';
-            $publisherId = $this->db->query($publisherSql, ['name'=>$microformats['publisher']])->fetchColumn();
-            if (!$publisherId) {
-                $this->write("Unable to save publisher for $indexPageName -- publisher: ".$microformats['publisher']);
-            } else {
-                $this->db->query('UPDATE works SET publisher_id=:p WHERE id=:w', ['w'=>$workId, 'p'=>$publisherId]);
-            }
-        }
+// // Save basic work data to the database. It might already be there, if this is a subpage, in which case we don't
+// // really care that this won't do anything, and this is just as fast as checking whether it exists or not.
+// $sql = "INSERT IGNORE INTO `works` SET"
+// . " `language_id`=:lid,"
+// . " `wikidata_item`=:wikidata_item,"
+// . " `pagename`=:pagename,"
+// . " `title`=:title,"
+// . " `year`=:year";
+// $insertParams = [
+// 'lid' => $this->,
+// 'wikidata_item' => ,
+// 'pagename' => $rootPageName,
+// 'title' => (!empty($microformatVals['ws-title'])) ? $microformatVals['ws-title'] : $pagename,
+// 'year' => $microformatVals['ws-year'],
+// ];
+// $this->db->query($sql, $insertParams);
+// $workId = $this->getWorkId($rootPageName);
+// if (!is_numeric($workId)) {
+// // Eh? What's going on here then?
+// throw new \Exception("Failed to save pagename: $pagename -- params were: ".print_r($insertParams, true));
+// }
+//
+// // Save the authors.
+// $authors = explode('/', $microformatVals['ws-author']);
+// foreach ($authors as $author) {
+// $authorId = $this->getOrCreateRecord('authors', $author);
+// $sqlAuthorLink = 'INSERT IGNORE INTO `authors_works` SET author_id=:a, work_id=:w';
+// $this->db->query($sqlAuthorLink, ['a' => $authorId, 'w' => $workId]);
+// }
+//
+// // Link the Index pages (i.e. 'templates' that are in the right NS.).
+// foreach ($pageParse->get('templates') as $tpl) {
+// if ($tpl['ns'] === (int) $this->currentLang->index_ns_id) {
+// $this->writeDebug(" -- Linking an index page: " . $tpl['*']);
+// $indexPageName = $tpl['*'];
+// $indexPageId = $this->getOrCreateRecord('index_pages', $indexPageName);
+// $sqlInsertIndexes = 'INSERT IGNORE INTO `works_indexes` SET index_page_id=:ip, work_id=:w';
+// $this->db->query($sqlInsertIndexes, ['ip' => $indexPageId, 'w' => $workId]);
+// $this->getIndexPageMetadata($indexPageName, $workId);
+// }
+// }
+//
+// // Save the categories.
+// foreach ($pageParse->get('categories') as $cat) {
+// if (isset($cat['hidden'])) {
+// continue;
+// }
+// }
+	}
 
-    }
+	public function completeQuery( FluentRequest $request, $resultKey, $callback = false ) {
+		$api = new MediawikiApi( "https://" . $this->currentLang->code . ".wikisource.org/w/api.php" );
+		$data = [];
+		$continue = true;
+		do {
+			// Send request and save data for later returning.
+			$result = new Data( $api->getRequest( $request ) );
+			$restultingData = $result->get( $resultKey );
+			if ( !is_array( $restultingData ) ) {
+				$continue = false;
+				continue;
+			}
+			$data = array_merge_recursive( $data, $restultingData );
 
-    protected function getSingleMainspaceWork($pagename)
-    {
-        $this->writeDebug("Importing from {$this->currentLang->code}: " . $pagename);
-        sleep(2);
+			// If a callback is specified, call it for each of the current result set.
+			if ( is_callable( $callback ) ) {
+				foreach ( $restultingData as $datum ) {
+					try {
+						call_user_func( $callback, $datum['title'] );
+					} catch ( \Exception $e ) {
+						// If anything goes wrong, report it and carry on.
+						$this->write( 'Error with '.$datum['title'].' -- '.$e->getMessage() );
+					}
+				}
+			}
 
-        // Retrieve the page text, Index links (i.e. templates in the right NS), and categories.
-        $requestParse = FluentRequest::factory()
-            ->setAction('parse')
-            ->setParam('page', $pagename)
-            ->setParam('prop', 'text|templates|categories');
-        $pageParse = new Data($this->completeQuery($requestParse, 'parse'));
-        // Normalize the pagename.
-        $pagename = $pageParse->get('title');
+			// Whether to continue or not.
+			if ( $result->get( 'continue', false ) ) {
+				$request->addParams( $result->get( 'continue' ) );
+			} else {
+				$continue = false;
+			}
+		} while ( $continue );
 
-        // Get the Wikidata Item.
-        $requestProps = FluentRequest::factory()
-            ->setAction('query')
-            ->setParam('titles', $pagename)
-            ->setParam('prop', 'pageprops')
-            ->setParam('ppprop', 'wikibase_item');
-        $pageProps = $this->completeQuery($requestProps, 'query.pages');
-        $pagePropsSingle = new Data(array_shift($pageProps));
-        $wikibaseItem = $pagePropsSingle->get('pageprops.wikibase_item');
+		return $data;
+	}
 
-        // If this is a subpage, determine the mainpage.
-        if (strpos($pagename, '/') !== false) {
-            $rootPageName = substr($pagename, 0, strpos($pagename, '/'));
-        } else {
-            $rootPageName = $pagename;
-        }
+	private function getWikisourceLangEditions() {
+		$this->write( "Getting list of Wikisource languages" );
+		$wikisources = $this->wsApi->fetchWikisources();
+		foreach ( $wikisources as $wikisource ) {
+			$sql = "INSERT IGNORE INTO languages SET code=:code, label=:label, index_ns_id=:ns";
+			$params = [
+				'code' => $wikisource->getLanguageCode(),
+				'label' => $wikisource->getLanguageName(),
+				'ns' => $wikisource->getNamespaceId( Wikisource::NS_NAME_INDEX ),
+			];
+			$this->writeDebug( " -- Saving " . $params['label'] . ' (' . $params['code'] . ')' );
+			$this->db->query( $sql, $params );
+		}
+	}
 
-        // Deal with the data from within the page text.
-        // Note the slightly odd way of ensuring the HTML content is loaded as UTF8.
-        $pageHtml = $pageParse->get('text.*');
-        $pageCrawler = new Crawler;
-        $pageCrawler->addHTMLContent("<div>$pageHtml</div>", 'UTF-8');
-        // Pull the microformatted-defined attributes.
-        $microformatIds = ['ws-title', 'ws-author', 'ws-year'];
-        $microformatVals = [];
-        foreach ($microformatIds as $i) {
-            $el = $pageCrawler->filterXPath("//*[@id='$i']");
-            $microformatVals[$i] = ($el->count() > 0) ? $el->text() : '';
-        }
-
-        // Save basic work data to the database. It might already be there, if this is a subpage, in which case we don't
-        // really care that this won't do anything, and this is just as fast as checking whether it exists or not.
-        $sql = "INSERT IGNORE INTO `works` SET"
-            . " `language_id`=:lid,"
-            . " `wikidata_item`=:wikidata_item,"
-            . " `pagename`=:pagename,"
-            . " `title`=:title,"
-            . " `year`=:year";
-        $insertParams = [
-            'lid' => $this->currentLang->id,
-            'wikidata_item' => $wikibaseItem,
-            'pagename' => $rootPageName,
-            'title' => (!empty($microformatVals['ws-title'])) ? $microformatVals['ws-title'] : $pagename,
-            'year' => $microformatVals['ws-year'],
-        ];
-        $this->db->query($sql, $insertParams);
-        $workId = $this->getWorkId($rootPageName);
-        if (!is_numeric($workId)) {
-            // Eh? What's going on here then?
-            throw new \Exception("Failed to save pagename: $pagename -- params were: ".print_r($insertParams, true));
-        }
-
-        // Save the authors.
-        $authors = explode('/', $microformatVals['ws-author']);
-        foreach ($authors as $author) {
-            $authorId = $this->getOrCreateRecord('authors', $author);
-            $sqlAuthorLink = 'INSERT IGNORE INTO `authors_works` SET author_id=:a, work_id=:w';
-            $this->db->query($sqlAuthorLink, ['a' => $authorId, 'w' => $workId]);
-        }
-
-        // Link the Index pages (i.e. 'templates' that are in the right NS.).
-        foreach ($pageParse->get('templates') as $tpl) {
-            if ($tpl['ns'] === (int) $this->currentLang->index_ns_id) {
-                $this->writeDebug(" -- Linking an index page: " . $tpl['*']);
-                $indexPageName = $tpl['*'];
-                $indexPageId = $this->getOrCreateRecord('index_pages', $indexPageName);
-                $sqlInsertIndexes = 'INSERT IGNORE INTO `works_indexes` SET index_page_id=:ip, work_id=:w';
-                $this->db->query($sqlInsertIndexes, ['ip' => $indexPageId, 'w' => $workId]);
-                $this->getIndexPageMetadata($indexPageName, $workId);
-            }
-        }
-
-        // Save the categories.
-        foreach ($pageParse->get('categories') as $cat) {
-            if (isset($cat['hidden'])) {
-                continue;
-            }
-        }
-    }
-
-    /**
-     * Get the ID of a 'authors' or 'index_pages' record, creating it if it doesn't exist.
-     *
-     * @param string $table Either 'authors' or 'index_pages'.
-     * @param string $pagename The pagename to query and/or save.
-     * @return integer The ID of the record.
-     */
-    public function getOrCreateRecord($table, $pagename)
-    {
-        $params = ['pagename' => $pagename, 'l' => $this->currentLang->id];
-        $sqlInsert = "INSERT IGNORE INTO `$table` SET `language_id`=:l, `pagename`=:pagename";
-        $this->db->query($sqlInsert, $params);
-        $sqlSelect = "SELECT `id` FROM `$table` WHERE `language_id`=:l AND `pagename`=:pagename";
-        return $this->db->query($sqlSelect, $params)->fetchColumn();
-    }
-
-    public function getWorkId($pagename)
-    {
-        $params = ['pagename' => $pagename, 'l' => $this->currentLang->id];
-        $sqlSelect = 'SELECT `id` FROM `works` WHERE `language_id`=:l AND `pagename`=:pagename';
-        return $this->db->query($sqlSelect, $params)->fetchColumn();
-    }
-
-    public function completeQuery(FluentRequest $request, $resultKey, $callback = false)
-    {
-        $api = new MediawikiApi("https://" . $this->currentLang->code . ".wikisource.org/w/api.php");
-        $data = [];
-        $continue = true;
-        do {
-            // Send request and save data for later returning.
-            $result = new Data($api->getRequest($request));
-            $restultingData = $result->get($resultKey);
-            if (!is_array($restultingData)) {
-                $continue = false;
-                continue;
-            }
-            $data = array_merge_recursive($data, $restultingData);
-
-            // If a callback is specified, call it for each of the current result set.
-            if (is_callable($callback)) {
-                foreach ($restultingData as $datum) {
-                    try {
-                        call_user_func($callback, $datum['title']);
-                    } catch (\Exception $e) {
-                        // If anything goes wrong, report it and carry on.
-                        $this->write('Error with '.$datum['title'].' -- '.$e->getMessage());
-                    }
-                }
-            }
-
-            // Whether to continue or not.
-            if ($result->get('continue', false)) {
-                $request->addParams($result->get('continue'));
-            } else {
-                $continue = false;
-            }
-        } while ($continue);
-
-        return $data;
-    }
-
-    private function getWikisourceLangEditions()
-    {
-        $this->write("Getting list of Wikisource languages");
-        $query = "SELECT ?langCode ?langName WHERE { "
-            . "?item wdt:P31 wd:Q15156455 . " // Instance of Wikisource language edition
-            . "?item wdt:P424 ?langCode . " // Wikimedia language code
-            . "?item wdt:P407 ?lang . " // language of work or name
-            . "?lang rdfs:label ?langName . FILTER(LANG(?langName) = ?langCode) . " // RDF label of the language, in the language
-            . "}";
-        $xml = $this->getXml($query);
-        $languageCodes = [];
-        foreach ($xml->results->result as $res) {
-            $langInfo = $this->getBindings($res);
-
-            // Find the Index NS identifier.
-            $req = FluentRequest::factory()
-                ->setAction('query')
-                ->setParam('meta', 'siteinfo')
-                ->setParam('siprop', 'namespaces');
-            // This next bit is a bit hacky :(
-            $this->currentLang = new \stdClass();
-            $this->currentLang->code = $langInfo['langCode'];
-            $namespaces = $this->completeQuery($req, 'query.namespaces');
-            $indexNsId = null; // Some don't have ProofreadPage extension installed.S
-            foreach ($namespaces as $ns) {
-                if (isset($ns['canonical']) && $ns['canonical'] === 'Index') {
-                    $indexNsId = $ns['id'];
-                }
-            }
-
-            // Put all of this site's info together.
-//            $wikisourceSites[$langInfo['langCode']] = new \stdClass();
-//                'code' => $langInfo['langCode'],
-//                'id' => $this->db->lastInsertId(),
-//                'index_ns' => $indexNsId,
-//            ];
-            $languageCodes[] = $langInfo['langCode'];
-
-            // Save the language info to the DB.
-            $sql = "INSERT IGNORE INTO languages SET code=:code, label=:label, index_ns_id=:ns";
-            $params = [
-                'code' => $langInfo['langCode'],
-                'label' => $langInfo['langName'],
-                'ns' => $indexNsId,
-            ];
-            $this->writeDebug(" -- Saving " . $params['label'] . ' (' . $params['code'] . ')');
-            $this->db->query($sql, $params);
-        }
-        return $languageCodes;
-    }
-    /* private function getWorks($offset)
+	/* private function getWorks($offset)
       {
       $queryWorks = "SELECT
       ?work ?workLabel ?title ?authorLabel ?originalPublicationDate ?about ?indexPage
@@ -445,34 +337,34 @@ class ScrapeCommand extends CommandBase
       //        echo "|}\n";
       } */
 
-    private function getBindings($xml)
-    {
-        $out = [];
-        foreach ($xml->binding as $binding) {
-            if (isset($binding->literal)) {
-                $out[(string) $binding['name']] = (string) $binding->literal;
-            }
-            if (isset($binding->uri)) {
-                $out[(string) $binding['name']] = (string) $binding->uri;
-            }
-        }
-        return $out;
-    }
-
-    private function getXml($query)
-    {
-        //echo "\n$query\n\n";
-        $url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=" . urlencode($query);
-        $result = file_get_contents($url);
-        $xml = new \SimpleXmlElement($result);
-        return $xml;
-    }
-    /**
-     * Get the page name from a Wikisource URL.
-     * @param string $url
-     * @return string
-     */
-    /* private function wikisourcePageName($url)
+// private function getBindings($xml)
+// {
+// $out = [];
+// foreach ($xml->binding as $binding) {
+// if (isset($binding->literal)) {
+// $out[(string) $binding['name']] = (string) $binding->literal;
+// }
+// if (isset($binding->uri)) {
+// $out[(string) $binding['name']] = (string) $binding->uri;
+// }
+// }
+// return $out;
+// }
+//
+// private function getXml($query)
+// {
+// //echo "\n$query\n\n";
+// $url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=" . urlencode($query);
+// $result = file_get_contents($url);
+// $xml = new \SimpleXmlElement($result);
+// return $xml;
+// }
+	/**
+	 * Get the page name from a Wikisource URL.
+	 * @param string $url
+	 * @return string
+	 */
+	/* private function wikisourcePageName($url)
       {
       $wikiLang = 'en';
       if (!empty($url) && strpos($url, "$wikiLang.wikisource") !== false) {

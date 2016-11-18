@@ -32,7 +32,7 @@
                     <td>
                         <ul>
                         {% for a in trace.args %}
-                        <li>{{dump(a)}}</li>
+                        <li>{% if debug %}{{dump(a)}}{% else %}{{ a }}{% endif %}</li>
                         {% endfor %}
                         </ul>
                     </td>
