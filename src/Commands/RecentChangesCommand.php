@@ -43,6 +43,10 @@ class RecentChangesCommand extends CommandBase {
 	}
 
 	public function runOneLang( Wikisource $wikisource ) {
+		$this->write(
+			"---- Getting recent changes from ".$wikisource->getLanguageName()
+			." (" .$wikisource->getLanguageCode().") ---- "
+		);
 
 		// Get recentchanges from the last 2 days.
 		$request = FluentRequest::factory()
