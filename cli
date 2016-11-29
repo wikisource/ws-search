@@ -1,29 +1,18 @@
 #!/usr/bin/env php
 <?php
 // Make sure this isn't being executed from somewhere else.
-if (php_sapi_name() !== 'cli') {
+if ( php_sapi_name() !== 'cli') {
     echo "This script must be called from the command line" . PHP_EOL;
     exit(1);
 }
 
 // Set up Composer and error handling.
 require __DIR__ . '/vendor/autoload.php';
-\Eloquent\Asplode\Asplode::install();
 
+use App\Commands\RecentChangesCommand;
+use App\Config;
+use Symfony\Component\Console\Application;
 
-// Determine the command classname, defaulting to 'help' if not found.
-$commandName = (isset($argv[1]) && stripos($argv[1], 'help') === false) ? $argv[1] : 'help';
-$commandClass = '\\App\\Commands\\' . App\Text::camelcase($commandName) . 'Command';
-if (!class_exists($commandClass)) {
-    echo "ERROR: Command '$commandName' not valid." . PHP_EOL;
-    $commandClass = '\\App\\Commands\\HelpCommand';
-}
-
-
-// Run the actual command, giving it the remaining CLI arguments.
-//array_shift($argv);
-//if (empty($argv)) {
-//    $commandClass = '\\App\\Commands\\HelpCommand';
-//}
-$command = new $commandClass($commandName, $argv);
-$command->run();
+$application = new Application('Wikisource Search', Config::version());
+$application->add(new RecentChangesCommand());
+$application->run();

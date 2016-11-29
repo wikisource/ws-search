@@ -46,12 +46,16 @@ class WorkSaver {
 	public function save( Work $work ) {
 		// Save basic work data to the database. It might already be there, if this is a subpage, in which case we don't
 		// really care that this won't do anything, and this is just as fast as checking whether it exists or not.
-		$sql = "INSERT IGNORE INTO `works` SET"
-			   . " `language_id`=:lid,"
-			   . " `wikidata_item`=:wikidata_item,"
-			   . " `pagename`=:pagename,"
-			   . " `title`=:title,"
-			   . " `year`=:year";
+		$sql = "INSERT INTO `works` SET"
+			. " `language_id`=:lid,"
+			. " `wikidata_item`=:wikidata_item,"
+			. " `pagename`=:pagename,"
+			. " `title`=:title,"
+			. " `year`=:year"
+			. " ON DUPLICATE KEY UPDATE "
+			. " `wikidata_item`=:wikidata_item,"
+			. " `title`=:title,"
+			. " `year`=:year";
 		$langId = $this->getLangId( $work->getWikisource()->getLanguageCode() );
 		$insertParams = [
 			'lid' => $langId,

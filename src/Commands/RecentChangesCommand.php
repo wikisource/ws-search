@@ -3,33 +3,40 @@
 namespace App\Commands;
 
 use App\Config;
-use App\Database;
 use App\Database\WorkSaver;
-use Mediawiki\Api\MediawikiApi;
 use Mediawiki\Api\FluentRequest;
-use GetOptionKit\OptionCollection;
 use Mediawiki\Api\UsageException;
 use Stash\Driver\FileSystem;
 use Stash\Pool;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 use Wikisource\Api\Wikisource;
 use Wikisource\Api\WikisourceApi;
 
-class RecentChangesCommand extends CommandBase {
+class RecentChangesCommand extends Command {
 
-	public function getCliOptions() {
-		$options = new OptionCollection;
-		$options->add( 'l|lang?string', 'The language code of the Wikisource to scrape' );
-		return $options;
+	/** @var SymfonyStyle */
+	protected $io;
+
+	protected function configure(){
+		$this->setName('rc');
+		$this->setDescription('Import works from Recent Changes feeds.');
+		$desc = 'The language code of the Wikisource to scrape';
+		$this->addOption('lang', 'l', InputOption::VALUE_OPTIONAL, $desc);
 	}
 
-	public function run() {
+	protected function execute(InputInterface $input, OutputInterface $output) {
+		$this->io = new SymfonyStyle($input, $output);
 
 		// Set up WikisourceApi.
 		$wsApi = new WikisourceApi();
 		$cache = new Pool( new FileSystem( [ 'path' => Config::storageDirTmp( 'cache' ) ] ) );
 		$wsApi->setCache( $cache );
 
-		$lang = $this->cliOptions->lang;
+		$lang = $input->getOption('lang');
 		if ( $lang ) {
 			// Run for just the requested language.
 			$wikisource = $wsApi->fetchWikisource( $lang );
@@ -43,7 +50,7 @@ class RecentChangesCommand extends CommandBase {
 	}
 
 	public function runOneLang( Wikisource $wikisource ) {
-		$this->write(
+		$this->io->text(
 			"---- Getting recent changes from ".$wikisource->getLanguageName()
 			." (" .$wikisource->getLanguageCode().") ---- "
 		);
@@ -57,13 +64,13 @@ class RecentChangesCommand extends CommandBase {
 			->setParam( 'rcnamespace', 0 );
 		$rc = $wikisource->getMediawikiApi()->getRequest( $request );
 		foreach ( $rc['query']['recentchanges'] as $rcItem ) {
-			$this->write( $rcItem['title'] );
+			$this->io->text( $rcItem['title'] );
 			$work = $wikisource->getWork( $rcItem['title'] );
 			$dbWork = new WorkSaver();
 			try {
 				$dbWork->save( $work );
 			} catch ( UsageException $ex ) {
-				$this->write( 'ERROR: ' . $ex->getMessage() );
+				$this->io->error( $ex->getMessage() );
 			}
 		}
 	}
