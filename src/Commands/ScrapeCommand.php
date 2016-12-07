@@ -4,15 +4,19 @@ namespace App\Commands;
 
 use App\Database\Database;
 use App\Database\WorkSaver;
+use Exception;
 use Mediawiki\Api\MediawikiApi;
 use Mediawiki\Api\FluentRequest;
-use GetOptionKit\OptionCollection;
 use Dflydev\DotAccessData\Data;
-use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 use Wikisource\Api\Wikisource;
 use Wikisource\Api\WikisourceApi;
 
-class ScrapeCommand extends CommandBase {
+class ScrapeCommand extends Command {
 
 	/** @var Database */
 	private $db;
@@ -26,44 +30,51 @@ class ScrapeCommand extends CommandBase {
 	 */
 	private $currentLang;
 
-	public function getCliOptions() {
-		$options = new OptionCollection;
-		$options->add( 'l|lang?string', 'The language code of the Wikisource to scrape' );
-		$options->add( 't|title?string', 'The title of a single page to scrape, must be combined with --lang' );
-		$options->add( 'langs', 'Retrieve metadata about all language Wikisources' );
-		return $options;
+	/** @var SymfonyStyle */
+	protected $io;
+
+	protected function configure(){
+		$this->setName('scrape');
+		$this->setDescription('Import all works from Wikisource.');
+		$langDesc = 'The language code of the Wikisource to scrape';
+		$this->addOption('lang', 'l', InputOption::VALUE_OPTIONAL, $langDesc);
+		$titleDesc = 'The title of a single page to scrape, must be combined with --lang';
+		$this->addOption('title', 't', InputOption::VALUE_OPTIONAL, $titleDesc);
+		$langsDesc = 'Retrieve metadata about all language Wikisources';
+		$this->addOption('langs', null, InputOption::VALUE_NONE, $langsDesc);
 	}
 
-	public function run() {
+	protected function execute(InputInterface $input, OutputInterface $output) {
+		$this->io = new SymfonyStyle($input, $output);
 		$startTime = time();
 
 		$this->db = new Database;
 		$this->wsApi = new WikisourceApi();
 
-		if ( $this->cliOptions->langs ) {
+		if ( $input->getOption('langs') ) {
 			$this->getWikisourceLangEditions();
 		}
 
 		// All works in one language Wikisource.
-		if ( $this->cliOptions->lang && !$this->cliOptions->title ) {
-			$langCode = $this->cliOptions->lang;
+		if ( $input->getOption('lang') && !$input->getOption('title') ) {
+			$langCode = $input->getOption('lang');
 			$this->setCurrentLang( $langCode );
 			$this->getAllWorks( $langCode );
 		}
 
 		// A single work from a single Wikisource.
-		if ( $this->cliOptions->title ) {
-			$langCode = $this->cliOptions->lang;
+		if ( $input->getOption('title') ) {
+			$langCode = $input->getOption('lang');
 			if ( !$langCode ) {
-				$this->write( "You must also specify the Wikisource language code, with --lang=xx" );
-				exit( 1 );
+				$this->io->error( "You must also specify the Wikisource language code, with --lang=xx" );
+				return 1;
 			}
 			$this->setCurrentLang( $langCode );
-			$this->getSingleMainspaceWork( $this->cliOptions->title );
+			$this->getSingleMainspaceWork( $input->getOption('title') );
 		}
 
 		// If nothing else is specified, scrape everything.
-		if ( empty( $this->cliOptions->toArray() ) ) {
+		if ( count( $input->getOptions() ) === 0 ) {
 			$langCodes = $this->getWikisourceLangEditions();
 			foreach ( $langCodes as $lc ) {
 				$this->setCurrentLang( $lc );
@@ -71,19 +82,22 @@ class ScrapeCommand extends CommandBase {
 			}
 		}
 
-		$this->write( "Scraping finished in about ".round( ( time()-$startTime )/60/60, 2 )." hours" );
+		$duration = round( ( time()-$startTime )/60/60, 2 );
+		$this->io->success( "Scraping finished in about $duration hours" );
+		return 0;
 	}
 
 	public function setCurrentLang( $code ) {
 		$sql = "SELECT * FROM languages WHERE code=:code";
 		$this->currentLang = $this->db->query( $sql, [ 'code' => $code ] )->fetch();
 		if ( !$this->currentLang ) {
-			throw new \Exception( "Unable to load language '$code'" );
+			$msg = "Unable to load language '$code'.\nDo you need to run this with `scrape --langs`?";
+			throw new Exception( $msg );
 		}
 	}
 
 	private function getAllWorks( $langCode ) {
-		$this->write( "Getting works from '$langCode' Wikisource." );
+		$this->io->text( "Getting works from '$langCode' Wikisource." );
 		$request = FluentRequest::factory()
 			->setAction( 'query' )
 			->setParam( 'list', 'allpages' )
@@ -94,7 +108,7 @@ class ScrapeCommand extends CommandBase {
 	}
 
 	protected function getSingleMainspaceWork( $pageName ) {
-		$this->writeDebug( "Importing from {$this->currentLang->code}: " . $pageName );
+		$this->io->text( "Importing from {$this->currentLang->code}: " . $pageName );
 		$ws = $this->wsApi->fetchWikisource( $this->currentLang->code );
 		$work = $ws->getWork( $pageName );
 		$workSaver = new WorkSaver();
@@ -210,7 +224,7 @@ class ScrapeCommand extends CommandBase {
 						call_user_func( $callback, $datum['title'] );
 					} catch ( \Exception $e ) {
 						// If anything goes wrong, report it and carry on.
-						$this->write( 'Error with '.$datum['title'].' -- '.$e->getMessage() );
+						$this->io->error( 'Error with '.$datum['title'].' -- '.$e->getMessage() );
 					}
 				}
 			}
@@ -227,7 +241,7 @@ class ScrapeCommand extends CommandBase {
 	}
 
 	private function getWikisourceLangEditions() {
-		$this->write( "Getting list of Wikisource languages" );
+		$this->io->text( "Getting list of Wikisource languages" );
 		$wikisources = $this->wsApi->fetchWikisources();
 		foreach ( $wikisources as $wikisource ) {
 			$sql = "INSERT IGNORE INTO languages SET code=:code, label=:label, index_ns_id=:ns";
@@ -236,7 +250,7 @@ class ScrapeCommand extends CommandBase {
 				'label' => $wikisource->getLanguageName(),
 				'ns' => $wikisource->getNamespaceId( Wikisource::NS_NAME_INDEX ),
 			];
-			$this->writeDebug( " -- Saving " . $params['label'] . ' (' . $params['code'] . ')' );
+			$this->io->text( " -- Saving " . $params['label'] . ' (' . $params['code'] . ')' );
 			$this->db->query( $sql, $params );
 		}
 	}

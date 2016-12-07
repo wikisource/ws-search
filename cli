@@ -10,9 +10,11 @@ if ( php_sapi_name() !== 'cli') {
 require __DIR__ . '/vendor/autoload.php';
 
 use App\Commands\RecentChangesCommand;
+use App\Commands\ScrapeCommand;
 use App\Config;
 use Symfony\Component\Console\Application;
 
 $application = new Application('Wikisource Search', Config::version());
+$application->add(new ScrapeCommand());
 $application->add(new RecentChangesCommand());
 $application->run();
