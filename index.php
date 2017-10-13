@@ -2,7 +2,7 @@
 
 require_once __DIR__.'/bootstrap.php';
 
-$dispatcher = FastRoute\simpleDispatcher( function( FastRoute\RouteCollector $r ) {
+$dispatcher = FastRoute\simpleDispatcher( function ( FastRoute\RouteCollector $r ) {
 	$r->addRoute( 'GET', '/', 'HomeController::index' );
 	$r->addRoute( 'GET', '/wikidata', 'WikidataController::index' );
 	$r->addRoute( 'GET', '/login', 'UserController::loginForm' );

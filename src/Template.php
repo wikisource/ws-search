@@ -3,6 +3,7 @@
 namespace App;
 
 use App\Database\Database;
+use Twig_Loader_Filesystem;
 
 class Template {
 
@@ -23,8 +24,8 @@ class Template {
 
 	/**
 	 * Create a new template either with a file-based Twig template, or a Twig string.
-	 * @param string|boolean $templateName
-	 * @param string|boolean $templateString
+	 * @param string|bool $templateName The template to use. Use this or $templateString.
+	 * @param string|bool $templateString The Twig code to use. Use this or $templateName.
 	 */
 	public function __construct( $templateName = false, $templateString = false ) {
 		$this->templateName = $templateName;
@@ -38,16 +39,19 @@ class Template {
 			'debug' => Config::debug(),
 			'site_title' => Config::siteTitle(),
 		];
-		$this->loader = new \Twig_Loader_Filesystem( [ __DIR__ . '/../templates' ] );
+		$this->loader = new Twig_Loader_Filesystem( [ __DIR__ . '/../templates' ] );
 	}
 
+	/**
+	 * @param string $newName The template name.
+	 */
 	public function setTemplateName( $newName ) {
 		$this->templateName = $newName;
 	}
 
 	/**
 	 * Get the Filesystem template loader.
-	 * @return \Twig_Loader_Filesystem
+	 * @return Twig_Loader_Filesystem
 	 */
 	public function getLoader() {
 		return $this->loader;
@@ -55,7 +59,7 @@ class Template {
 
 	/**
 	 * Get a list of templates in a given directory, across all registered template paths.
-	 * @param string $directory
+	 * @param string $directory The template directory.
 	 * @return string[]
 	 */
 	public function getTemplates( $directory ) {
@@ -69,6 +73,10 @@ class Template {
 		return $templates;
 	}
 
+	/**
+	 * @param string $name The data item to set.
+	 * @param string $value The data item's value.
+	 */
 	public function __set( $name, $value ) {
 		$this->data[$name] = $value;
 	}
@@ -77,7 +85,7 @@ class Template {
 	 * Find out whether a given item of template data is set.
 	 *
 	 * @param string $name The property name.
-	 * @return boolean
+	 * @return bool
 	 */
 	public function __isset( $name ) {
 		return isset( $this->data[$name] );
@@ -86,7 +94,7 @@ class Template {
 	/**
 	 * Get an item from this template's data.
 	 *
-	 * @param string $name
+	 * @param string $name The data item's name.
 	 * @return mixed
 	 */
 	public function __get( $name ) {

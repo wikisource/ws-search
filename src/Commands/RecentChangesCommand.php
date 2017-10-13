@@ -21,35 +21,46 @@ class RecentChangesCommand extends Command {
 	/** @var SymfonyStyle */
 	protected $io;
 
-	protected function configure(){
-		$this->setName('rc');
-		$this->setDescription('Import works from Recent Changes feeds.');
+	/**
+	 *
+	 */
+	protected function configure() {
+		$this->setName( 'rc' );
+		$this->setDescription( 'Import works from Recent Changes feeds.' );
 		$desc = 'The language code of the Wikisource to scrape';
-		$this->addOption('lang', 'l', InputOption::VALUE_OPTIONAL, $desc);
+		$this->addOption( 'lang', 'l', InputOption::VALUE_OPTIONAL, $desc );
 	}
 
-	protected function execute(InputInterface $input, OutputInterface $output) {
-		$this->io = new SymfonyStyle($input, $output);
+	/**
+	 * @param InputInterface $input The input.
+	 * @param OutputInterface $output The output.
+	 * @return null|int null or 0 if everything went fine, or an error code
+	 */
+	protected function execute( InputInterface $input, OutputInterface $output ) {
+		$this->io = new SymfonyStyle( $input, $output );
 
 		// Set up WikisourceApi.
 		$wsApi = new WikisourceApi();
 		$cache = new Pool( new FileSystem( [ 'path' => Config::storageDirTmp( 'cache' ) ] ) );
 		$wsApi->setCache( $cache );
 
-		$lang = $input->getOption('lang');
+		$lang = $input->getOption( 'lang' );
 		if ( $lang ) {
 			// Run for just the requested language.
 			$wikisource = $wsApi->fetchWikisource( $lang );
 			$this->runOneLang( $wikisource );
 		} else {
 			// Run for all languages.
-			foreach ($wsApi->fetchWikisources() as $wikisource) {
+			foreach ( $wsApi->fetchWikisources() as $wikisource ) {
 				$this->runOneLang( $wikisource );
 			}
 		}
 	}
 
-	public function runOneLang( Wikisource $wikisource ) {
+	/**
+	 * @param Wikisource $wikisource The wikisource to run against.
+	 */
+	protected function runOneLang( Wikisource $wikisource ) {
 		$this->io->text(
 			"---- Getting recent changes from ".$wikisource->getLanguageName()
 			." (" .$wikisource->getLanguageCode().") ---- "

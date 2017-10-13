@@ -23,7 +23,7 @@ class HomeController extends ControllerBase {
 		if ( !in_array( $outputFormat, array_keys( $outputFormats ) ) ) {
 			$outputFormat = $defaultOutputFormat;
 		}
-	    $_GET['output_format'] = $outputFormat;
+		$_GET['output_format'] = $outputFormat;
 
 		// Has index page.
 		$hasIndexOptions = [ 'na' => 'N/A', 'yes' => 'Yes', 'no' => 'No' ];

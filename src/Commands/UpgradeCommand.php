@@ -3,28 +3,43 @@
 namespace App\Commands;
 
 use App\Config;
-use App\Database;
-use GetOptionKit\OptionCollection;
+use App\Database\Database;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 
-class UpgradeCommand extends \App\Commands\CommandBase {
+class UpgradeCommand extends Command {
 
-	public function getCliOptions() {
-		$specs = new OptionCollection;
-		$specs->add( 'nuke', 'Destroy all existing data before upgrading.' );
-		return $specs;
+	/** @var OutputInterface */
+	protected $out;
+
+	/**
+	 *
+	 */
+	protected function configure() {
+		$this->setName( 'upgrade' );
+		$this->setDescription( 'Install or upgrade the WS Search database.' );
+		$this->addOption( 'nuke', null, InputOption::VALUE_NONE );
 	}
 
-	public function run() {
+	/**
+	 * @param InputInterface $input The input.
+	 * @param OutputInterface $output The output.
+	 * @return null|int null or 0 if everything went fine, or an error code
+	 */
+	protected function execute( InputInterface $input, OutputInterface $output ) {
+		$this->out = $output;
 		$db = new Database();
-		if ( $this->cliOptions->nuke ) {
+		if ( $input->getOption( 'nuke' ) ) {
 			$this->nukeData( $db );
 		}
 		$this->installStructure( $db );
-		$this->write( "Upgrade complete; now running version " . Config::version() );
+		$output->writeln( "Upgrade complete; now running version " . Config::version() );
 	}
 
 	private function nukeData( Database $db ) {
-		$this->write( "Deleting all data in the database!" );
+		$this->out->writeln( "Deleting all data in the database!" );
 		$db->query( "SET foreign_key_checks = 0" );
 		$db->query( "DROP TABLE IF EXISTS `works_indexes`" );
 		$db->query( "DROP TABLE IF EXISTS `index_pages`" );
@@ -36,10 +51,13 @@ class UpgradeCommand extends \App\Commands\CommandBase {
 		$db->query( "SET foreign_key_checks = 1" );
 	}
 
+	/**
+	 * @param Database $db The database.
+	 */
 	protected function installStructure( Database $db ) {
 		$charset = "CHARACTER SET utf8 COLLATE utf8_unicode_ci";
 		if ( !$this->tableExists( $db, 'languages' ) ) {
-			$this->write( "Creating table 'languages'" );
+			$this->out->writeln( "Creating table 'languages'" );
 			$db->query( "CREATE TABLE `languages` ("
 				. " `id` INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
 				. " `code` VARCHAR(10) $charset NOT NULL UNIQUE, "
@@ -48,7 +66,7 @@ class UpgradeCommand extends \App\Commands\CommandBase {
 				. ");" );
 		}
 		if ( !$this->tableExists( $db, 'publishers' ) ) {
-			$this->write( "Creating table 'publishers'" );
+			$this->out->writeln( "Creating table 'publishers'" );
 			$db->query( "CREATE TABLE `publishers` ("
 				. " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
 				. " `name` VARCHAR(255) $charset NOT NULL UNIQUE, "
@@ -56,7 +74,7 @@ class UpgradeCommand extends \App\Commands\CommandBase {
 				. ");" );
 		}
 		if ( !$this->tableExists( $db, 'works' ) ) {
-			$this->write( "Creating table 'works'" );
+			$this->out->writeln( "Creating table 'works'" );
 			$db->query( "CREATE TABLE `works` ("
 				. " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
 				. " `language_id` INT(4) UNSIGNED NOT NULL, "
@@ -71,7 +89,7 @@ class UpgradeCommand extends \App\Commands\CommandBase {
 				. ");" );
 		}
 		if ( !$this->tableExists( $db, 'authors' ) ) {
-			$this->write( "Creating table 'authors'" );
+			$this->out->writeln( "Creating table 'authors'" );
 			$db->query( "CREATE TABLE `authors` ("
 				. " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
 				. " `language_id` INT(4) UNSIGNED NOT NULL, "
@@ -82,7 +100,7 @@ class UpgradeCommand extends \App\Commands\CommandBase {
 				. ");" );
 		}
 		if ( !$this->tableExists( $db, 'authors_works' ) ) {
-			$this->write( "Creating table 'authors_works'" );
+			$this->out->writeln( "Creating table 'authors_works'" );
 			$db->query( "CREATE TABLE `authors_works` ("
 				. " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
 				. " `author_id` INT(10) UNSIGNED NOT NULL, "
@@ -93,7 +111,7 @@ class UpgradeCommand extends \App\Commands\CommandBase {
 				. ");" );
 		}
 		if ( !$this->tableExists( $db, 'index_pages' ) ) {
-			$this->write( "Creating table 'index_pages'" );
+			$this->out->writeln( "Creating table 'index_pages'" );
 			$db->query( "CREATE TABLE `index_pages` ("
 				. " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
 				. " `language_id` INT(4) UNSIGNED NOT NULL, "
@@ -105,7 +123,7 @@ class UpgradeCommand extends \App\Commands\CommandBase {
 				. ");" );
 		}
 		if ( !$this->tableExists( $db, 'works_indexes' ) ) {
-			$this->write( "Creating table 'works_indexes'" );
+			$this->out->writeln( "Creating table 'works_indexes'" );
 			$db->query( "CREATE TABLE `works_indexes` ("
 				. " `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, "
 				. " `work_id` INT(10) UNSIGNED NOT NULL, "
@@ -117,6 +135,11 @@ class UpgradeCommand extends \App\Commands\CommandBase {
 		}
 	}
 
+	/**
+	 * @param Database $db The database to use.
+	 * @param string $tableName The table name to check for.
+	 * @return bool
+	 */
 	protected function tableExists( Database $db, $tableName ) {
 		return $db->query( 'SHOW TABLES LIKE :t', [ 't' => $tableName ] )->rowCount() === 1;
 	}

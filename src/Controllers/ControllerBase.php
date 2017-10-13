@@ -11,14 +11,11 @@ abstract class ControllerBase {
 
 	public function __construct() {
 		$this->db = new Database();
-		/*
-        if (isset($_SESSION['user_id'])) {
-            $sql = 'SELECT `id`, `name` FROM users WHERE id=:id';
-            $this->user = $this->db->query($sql, ['id' => $_SESSION['user_id']])->fetch();
-        }
-        */
 	}
 
+	/**
+	 * @param string $route The URL route to redirect to.
+	 */
 	protected function redirect( $route ) {
 		$url = \App\Config::baseUrl() . '/' . ltrim( $route, '/ ' );
 		http_response_code( 303 );
@@ -26,12 +23,19 @@ abstract class ControllerBase {
 		exit( 0 );
 	}
 
+	/**
+	 * @param string $ext The file extension, with no leading dot.
+	 * @param string $mime The mime type.
+	 * @param string $content The file contents.
+	 * @param string|bool $downloadName The filename, or false to default to today's date.
+	 */
 	protected function sendFile( $ext, $mime, $content, $downloadName = false ) {
-		$downloadName = ( $downloadName ? : date( 'Y-m-d' ) ) . '.' . $ext;
+		$filename = $downloadName ?: date( 'Y-m-d' );
+		$downloadName = $filename . '.' .  trim( $ext, '.' );
 		header( 'Content-Encoding: UTF-8' );
 		header( 'Content-type: ' . $mime . '; charset=UTF-8' );
 		header( 'Content-Disposition: attachment; filename="' . $downloadName . '"' );
 		echo $content;
-		exit;
+		exit( 0 );
 	}
 }

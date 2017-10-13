@@ -44,7 +44,7 @@ class Text {
 	 * @param string|array $value The underscored and lowercase string to be titlecased, or an array of such strings.
 	 *                               titlecased, or an array of such strings.
 	 * @param 'html'|'latex' $format The desired output format.
-	 * @return string                A properly-typeset title.
+	 * @return string A properly-typeset title.
 	 * @todo Get replacement strings from configuration file.
 	 */
 	public static function titlecase( $value, $format = 'html' ) {

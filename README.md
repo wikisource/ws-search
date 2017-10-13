@@ -5,6 +5,8 @@ A tool to search through book data in Wikidata and Wikisource.
 
 See it in action at http://tools.wmflabs.org/ws-search
 
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/wikisource/ws-search/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/wikisource/ws-search/?branch=master)
+[![Build Status](https://scrutinizer-ci.com/g/wikisource/ws-search/badges/build.png?b=master)](https://scrutinizer-ci.com/g/wikisource/ws-search/build-status/master)
 [![License](https://img.shields.io/github/license/wikisource/ws-search.svg?style=flat-square)](https://github.com/wikisource/ws-search/blob/master/LICENSE.txt)
 
 ## Install

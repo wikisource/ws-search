@@ -1,6 +1,5 @@
 <?php
 
-use App\DB\Tables\Users;
 
 class TestBase extends PHPUnit_Framework_TestCase {
 
