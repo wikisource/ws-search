@@ -77,6 +77,11 @@ class RecentChangesCommand extends Command {
 		foreach ( $rc['query']['recentchanges'] as $rcItem ) {
 			$this->io->text( $rcItem['title'] );
 			$work = $wikisource->getWork( $rcItem['title'] );
+			// Ignore the Main_Page.
+			$mainPageId = 'Q5296';
+			if ( $work->getWikidataItemNumber() === $mainPageId ) {
+				continue;
+			}
 			$dbWork = new WorkSaver();
 			try {
 				$dbWork->save( $work );
