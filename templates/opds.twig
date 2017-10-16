@@ -1,0 +1,31 @@
+{% if works %}<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:dc="http://purl.org/dc/terms/"
+      xmlns:opds="http://opds-spec.org/2010/catalog">
+    <id>@todo</id>
+
+    <title>Wikisource</title>
+    <updated>2010-01-10T10:01:11Z</updated>
+
+    {% for work in works %}
+    <entry>
+        <title>{{ work.title }}</title>
+        <id>https://{{ lang }}.wikisource.org/wiki/{{ work.pagename|escape('url') }}</id>
+        <updated>@todo</updated>
+        <author>
+            <name>{{ work.author }}</name>
+            <uri>@todo</uri>
+        </author>
+        <dc:language>{{ lang }}</dc:language>
+        <dc:issued>{{ work.year }}</dc:issued>
+        {# <category scheme="http://www.bisg.org/standards/bisac_subject/index.html" term="FIC020000" label="FICTION / Men's Adventure"/> #}
+        <summary>@todo</summary>
+
+        <link rel="http://opds-spec.org/acquisition"
+              href="https://tools.wmflabs.org/wsexport/tool/book.php?lang={{lang}}&format=epub-3&page={{work.pagename|escape('url')}}"
+              type="application/epub+zip" />
+    </entry>
+    {% endfor %}
+
+</feed>
+{% endif %}

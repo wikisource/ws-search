@@ -14,6 +14,7 @@ class HomeController extends ControllerBase {
 			'list' => 'List',
 			'table' => 'Table',
 			'csv' => 'CSV',
+			'opds' => 'OPDS',
 		];
 		$defaultOutputFormat = 'table';
 		$outputFormat = $defaultOutputFormat;
@@ -50,13 +51,13 @@ class HomeController extends ControllerBase {
 		$sqlTitleWhere = '';
 		if ( !empty( $_GET['title'] ) ) {
 			$sqlTitleWhere = 'AND `works`.`pagename` LIKE :title ';
-			$params['title'] = '%' . $_GET['title'] . '%';
+			$params['title'] = '%' . trim( $_GET['title'] ) . '%';
 		}
 
 		$sqlAuthorWhere = '';
 		if ( !empty( $_GET['author'] ) ) {
 			$sqlAuthorWhere = 'AND `authors`.`pagename` LIKE :author ';
-			$params['author'] = '%' . $_GET['author'] . '%';
+			$params['author'] = '%' . trim( $_GET['author'] ) . '%';
 		}
 
 		// Has index page.
