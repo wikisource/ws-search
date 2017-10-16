@@ -2,6 +2,7 @@
 
 namespace App\Commands;
 
+use App\Config;
 use App\Database\Database;
 use App\Database\WorkSaver;
 use Exception;
@@ -10,6 +11,8 @@ use Mediawiki\Api\FluentRequest;
 use Dflydev\DotAccessData\Data;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use Stash\Driver\FileSystem;
+use Stash\Pool;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -62,6 +65,10 @@ class ScrapeCommand extends Command {
 
 		$this->db = new Database;
 		$this->wsApi = new WikisourceApi();
+
+		// Cache.
+		$cache = new Pool( new FileSystem( [ 'path' => Config::storageDirTmp( 'cache' ) ] ) );
+		$this->wsApi->setCache( $cache );
 
 		// Debug?
 		if ( $input->getOption( 'debug' ) ) {
