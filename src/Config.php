@@ -4,8 +4,12 @@ namespace App;
 
 class Config {
 
+	/**
+	 * Get the current application version number (compatible with the Semantic Versioning Guidelines).
+	 * @return string Application version.
+	 */
 	public static function version() {
-		return '0.3.0';
+		return '0.4.0';
 	}
 
 	public static function configFile() {

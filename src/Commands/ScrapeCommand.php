@@ -50,8 +50,6 @@ class ScrapeCommand extends Command {
 		$this->addOption( 'title', 't', InputOption::VALUE_OPTIONAL, $titleDesc );
 		$langsDesc = 'Retrieve metadata about all language Wikisources';
 		$this->addOption( 'langs', null, InputOption::VALUE_NONE, $langsDesc );
-		$debugDesc = 'Show debugging output while scraping.';
-		$this->addOption( 'debug', 'd', InputOption::VALUE_NONE, $debugDesc );
 	}
 
 	/**
@@ -70,8 +68,8 @@ class ScrapeCommand extends Command {
 		$cache = new Pool( new FileSystem( [ 'path' => Config::storageDirTmp( 'cache' ) ] ) );
 		$this->wsApi->setCache( $cache );
 
-		// Debug?
-		if ( $input->getOption( 'debug' ) ) {
+		// Verbose output.
+		if ( $input->getOption( 'verbose' ) ) {
 			$logger = new Logger( 'mediawiki-api' );
 			$logger->pushHandler( new StreamHandler( 'php://stdout', Logger::DEBUG ) );
 			$this->wsApi->setLogger( $logger );
@@ -145,6 +143,14 @@ class ScrapeCommand extends Command {
 		$this->io->text( "Importing from {$this->currentLang->code}: " . $pageName );
 		$ws = $this->wsApi->fetchWikisource( $this->currentLang->code );
 		$work = $ws->getWork( $pageName );
+
+		// Ignore too many subpages.
+		$subpageCount = count( $work->getSubpages( 30 ) );
+		if ( $subpageCount === 30 ) {
+			$this->io->warning( "Too many subpages (more than $subpageCount found)." );
+			return;
+		}
+
 		$workSaver = new WorkSaver();
 		$workSaver->save( $work );
 	}

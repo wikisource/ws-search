@@ -6,6 +6,8 @@ use App\Config;
 use App\Database\WorkSaver;
 use Mediawiki\Api\FluentRequest;
 use Mediawiki\Api\UsageException;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 use Stash\Driver\FileSystem;
 use Stash\Pool;
 use Symfony\Component\Console\Command\Command;
@@ -44,6 +46,13 @@ class RecentChangesCommand extends Command {
 		$cache = new Pool( new FileSystem( [ 'path' => Config::storageDirTmp( 'cache' ) ] ) );
 		$wsApi->setCache( $cache );
 
+		// Verbose output.
+		if ( $input->getOption( 'verbose' ) ) {
+			$logger = new Logger( 'WikisourceApi' );
+			$logger->pushHandler( new StreamHandler( 'php://stdout', Logger::DEBUG ) );
+			$wsApi->setLogger( $logger );
+		}
+
 		$lang = $input->getOption( 'lang' );
 		if ( $lang ) {
 			// Run for just the requested language.
@@ -75,12 +84,18 @@ class RecentChangesCommand extends Command {
 			->setParam( 'rcnamespace', 0 );
 		$rc = $wikisource->getMediawikiApi()->getRequest( $request );
 		foreach ( $rc['query']['recentchanges'] as $rcItem ) {
-			$this->io->text( $rcItem['title'] );
 			try {
 				$work = $wikisource->getWork( $rcItem['title'] );
+				$this->io->text( $work->getPageTitle() );
 				// Ignore the Main_Page.
 				$mainPageId = 'Q5296';
 				if ( $work->getWikidataItemNumber() === $mainPageId ) {
+					continue;
+				}
+				// Ignore too many subpages.
+				$subpageCount = count( $work->getSubpages( 30 ) );
+				if ( $subpageCount === 30 ) {
+					$this->io->warning( "Too many subpages (more than $subpageCount found)." );
 					continue;
 				}
 				$dbWork = new WorkSaver();

@@ -924,16 +924,16 @@
         },
         {
             "name": "symfony/polyfill-mbstring",
-            "version": "v1.5.0",
+            "version": "v1.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",
-                "reference": "7c8fae0ac1d216eb54349e6a8baa57d515fe8803"
+                "reference": "2ec8b39c38cb16674bbf3fea2b6ce5bf117e1296"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/7c8fae0ac1d216eb54349e6a8baa57d515fe8803",
-                "reference": "7c8fae0ac1d216eb54349e6a8baa57d515fe8803",
+                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/2ec8b39c38cb16674bbf3fea2b6ce5bf117e1296",
+                "reference": "2ec8b39c38cb16674bbf3fea2b6ce5bf117e1296",
                 "shasum": ""
             },
             "require": {
@@ -945,7 +945,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.5-dev"
+                    "dev-master": "1.6-dev"
                 }
             },
             "autoload": {
@@ -979,7 +979,7 @@
                 "portable",
                 "shim"
             ],
-            "time": "2017-06-14T15:44:48+00:00"
+            "time": "2017-10-11T12:05:26+00:00"
         },
         {
             "name": "tedivm/stash",
@@ -1108,20 +1108,20 @@
         },
         {
             "name": "wikisource/api",
-            "version": "1.1.1",
+            "version": "1.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikisource/api.git",
-                "reference": "627c3a9d24e27cc1eba1dc73774f822545feaabd"
+                "reference": "ea9e75dcbd609b8f42a72c1fdc20dfb4e4a6d42a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikisource/api/zipball/627c3a9d24e27cc1eba1dc73774f822545feaabd",
-                "reference": "627c3a9d24e27cc1eba1dc73774f822545feaabd",
+                "url": "https://api.github.com/repos/wikisource/api/zipball/ea9e75dcbd609b8f42a72c1fdc20dfb4e4a6d42a",
+                "reference": "ea9e75dcbd609b8f42a72c1fdc20dfb4e4a6d42a",
                 "shasum": ""
             },
             "require": {
-                "addwiki/mediawiki-api": "dev-master",
+                "addwiki/mediawiki-api": "^0.7",
                 "dflydev/dot-access-data": "^1.0",
                 "psr/cache": "^1.0",
                 "psr/log": "^1.0",
@@ -1147,7 +1147,7 @@
                 "GPL-2.0+"
             ],
             "description": "A PHP API to Wikisources (all languages).",
-            "time": "2017-10-13T05:53:11+00:00"
+            "time": "2017-10-20T05:06:33+00:00"
         },
         {
             "name": "yohang/calendr",
