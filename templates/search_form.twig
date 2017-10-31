@@ -36,13 +36,23 @@
                 {% endfor %}
             </select>
         </p>
-        <p class="form-group col-md-4">
-            <label class="control-label" for="has_index">Has index page:</label>
+        <p class="form-group col-md-2">
+            <label class="control-label" for="has_index">Has index page?</label>
             <select name="has_index" id="has_index" class="form-control">
-                {% for format,label in hasIndexOptions %}
+                {% for format,label in yesNoOptions %}
                 <option value="{{format}}" {% if form_vals.has_index == format %}selected{% endif %}>
                     {{label}}
                 </option>
+                {% endfor %}
+            </select>
+        </p>
+        <p class="form-group col-md-2">
+            <label class="control-label" for="has_index">Is linked to Wikidata?</label>
+            <select name="has_wikidata" id="has_wikidata" class="form-control">
+                {% for format,label in yesNoOptions %}
+                    <option value="{{format}}" {% if form_vals.has_wikidata == format %}selected{% endif %}>
+                        {{label}}
+                    </option>
                 {% endfor %}
             </select>
         </p>

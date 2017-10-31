@@ -27,16 +27,21 @@ class HomeController extends ControllerBase {
 		$_GET['output_format'] = $outputFormat;
 
 		// Has index page.
-		$hasIndexOptions = [ 'na' => 'N/A', 'yes' => 'Yes', 'no' => 'No' ];
+		$yesNoOptions = [ 'na' => 'N/A', 'yes' => 'Yes', 'no' => 'No' ];
 		$hasIndex = 'na';
-		if ( isset( $_GET['has_index'] ) && in_array( $_GET['has_index'], array_keys( $hasIndexOptions ) ) ) {
+		if ( isset( $_GET['has_index'] ) && in_array( $_GET['has_index'], array_keys( $yesNoOptions ) ) ) {
 			$hasIndex = $_GET['has_index'];
+		}
+		// Linked to Wikidata.
+		$hasWikidata = 'na';
+		if ( isset( $_GET['has_wikidata'] ) && in_array( $_GET['has_wikidata'], array_keys( $yesNoOptions ) ) ) {
+			$hasWikidata = $_GET['has_wikidata'];
 		}
 
 		// Assemble the template.
 		$template = new Template( $outputFormat . '.twig' );
 		$template->outputFormats = $outputFormats;
-		$template->hasIndexOptions = $hasIndexOptions;
+		$template->yesNoOptions = $yesNoOptions;
 		$template->hasIndex = $hasIndex;
 		$template->title = Config::siteTitle();
 		$template->form_vals = $_GET;
@@ -68,6 +73,14 @@ class HomeController extends ControllerBase {
 			$sqlHasIndex = ' AND index_pages.id IS NULL ';
 		}
 
+		// Linked to Wikidata.
+		$sqlHasWikidata = '';
+		if ( $hasWikidata === 'yes' ) {
+			$sqlHasWikidata = ' AND works.wikidata_item IS NOT NULL ';
+		} elseif ( $hasWikidata === 'no' ) {
+			$sqlHasWikidata = ' AND works.wikidata_item IS NULL ';
+		}
+
 		// If nothing has been searched, return the empty template.
 		if ( !$sqlTitleWhere && !$sqlAuthorWhere && !$sqlHasIndex ) {
 			echo $template->render();
@@ -88,7 +101,7 @@ class HomeController extends ControllerBase {
 			. " LEFT JOIN works_indexes wi ON wi.work_id = works.id "
 			. " LEFT JOIN index_pages ON wi.index_page_id = index_pages.id "
 			. "WHERE "
-			. " l.code = :lang $sqlTitleWhere $sqlAuthorWhere $sqlHasIndex "
+			. " l.code = :lang $sqlTitleWhere $sqlAuthorWhere $sqlHasIndex $sqlHasWikidata "
 			. "GROUP BY works.id ";
 		$works = [];
 		foreach ( $this->db->query( $sql, $params )->fetchAll() as $work ) {
