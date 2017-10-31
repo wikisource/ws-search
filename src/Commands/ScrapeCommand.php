@@ -140,9 +140,9 @@ class ScrapeCommand extends Command {
 	 * @param string $pageName The Wikisource main namespace page title.
 	 */
 	protected function getSingleMainspaceWork( $pageName ) {
-		$this->io->text( "Importing from {$this->currentLang->code}: " . $pageName );
 		$ws = $this->wsApi->fetchWikisource( $this->currentLang->code );
 		$work = $ws->getWork( $pageName );
+		$this->io->text( "Importing from {$this->currentLang->code}: " . $work->getPageTitle() );
 
 		// Ignore too many subpages.
 		$subpageCount = count( $work->getSubpages( 30 ) );
