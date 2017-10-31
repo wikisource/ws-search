@@ -38,6 +38,9 @@ class ScrapeCommand extends Command {
 	/** @var SymfonyStyle */
 	protected $io;
 
+	/** @var string[] Page titles of works already saved in the current session. */
+	protected $savedWorks;
+
 	/**
 	 *
 	 */
@@ -133,6 +136,7 @@ class ScrapeCommand extends Command {
 			->setParam( 'apnamespace', 0 )
 			->setParam( 'apfilterredir', 'nonredirects' )
 			->setParam( 'aplimit', 500 );
+		$this->savedWorks = [];
 		$this->completeQuery( $request, 'query.allpages', [ $this, 'getSingleMainspaceWork' ] );
 	}
 
@@ -142,6 +146,12 @@ class ScrapeCommand extends Command {
 	protected function getSingleMainspaceWork( $pageName ) {
 		$ws = $this->wsApi->fetchWikisource( $this->currentLang->code );
 		$work = $ws->getWork( $pageName );
+
+		// Make sure we haven't already saved this work in the current session.
+		if ( array_key_exists( $work->getPageTitle(), $this->savedWorks ) ) {
+			return;
+		}
+		$this->savedWorks[ $work->getPageTitle() ] = true;
 		$this->io->text( "Importing from {$this->currentLang->code}: " . $work->getPageTitle() );
 
 		// Ignore too many subpages.
