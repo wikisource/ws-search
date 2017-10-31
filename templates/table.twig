@@ -27,6 +27,8 @@
                     <a href="https://wikidata.org/wiki/{{work.wikidata_item}}">
                         {{work.wikidata_item}}
                     </a>
+                    {% else %}
+                    {% include 'quick_statements.twig' %}
                     {% endif %}
                 </td>
                 <td>
@@ -37,7 +39,14 @@
                 <td>
                     <ol class="list-unstyled">
                     {% for author in work.authors %}
-                        <li>{{author.pagename}}</li>
+                        <li>{{ author.pagename }}
+                            {#
+                            <a href="https://{{lang}}.wikisource.org/wiki/{{author.pagename|escape('url')}}">{{author.pagename}}</a>
+                            <a href="https://www.wikidata.org/wiki/{{ author.wikidata_item }}">
+                                <img src="https://www.wikidata.org/static/images/project-logos/wikidatawiki.png" class="wikidata-logo" />
+                            </a>
+                            #}
+                        </li>
                     {% endfor %}
                     </ol>
                 </td>

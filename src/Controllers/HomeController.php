@@ -90,6 +90,7 @@ class HomeController extends ControllerBase {
 		// Otherwise, build the queries.
 		$sql = "SELECT DISTINCT "
 			. "   works.*,"
+			. "   IF (works.title IS NULL OR works.title = '', works.pagename, works.title) AS title,"
 			. "   MIN(index_pages.quality) AS quality,"
 			. "   p.name AS publisher_name,"
 			. "   p.location AS publisher_location "

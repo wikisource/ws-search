@@ -1,0 +1,32 @@
+<!-- Button trigger modal -->
+<a data-toggle="modal" data-target="#quickStatements{{ work.id }}">
+    Create Wikidata item
+</a>
+
+<!-- Modal -->
+<div class="modal fade" id="quickStatements{{ work.id }}" tabindex="-1" role="dialog" aria-labelledby="quickStatementsLabel{{ work.id }}">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="quickStatementsLabel{{ work.id }}">Quick Statements</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Head over to
+                    <a href="https://tools.wmflabs.org/wikidata-todo/quick_statements.php">Quick Statements</a>
+                    to create this work on Wikidata.
+                </p>
+                <p class="alert alert-warning">Please check these values first!</p>
+<pre>
+CREATE
+LAST&Tab;L{{ lang }}&Tab;"{{work.title}}"
+LAST&Tab;D{{ lang }}&Tab;"{% if work.year %}{{work.year}} {% endif %}edition of {{ work.title }}{% if work.authors %} by {% for author in work.authors %}{{author.pagename}}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}"
+LAST&Tab;S{{ lang }}wikisource&Tab;"{{work.pagename}}"
+LAST&Tab;P31&Tab;Q3331189
+{% if work.year %}LAST&Tab;P577&Tab;+{{work.year}}-07-01T00:00:00Z/9{% endif %}
+</pre>
+            </div>
+        </div>
+    </div>
+</div>
