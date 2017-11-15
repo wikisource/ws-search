@@ -148,11 +148,13 @@ class ScrapeCommand extends Command {
 		$work = $ws->getWork( $pageName );
 
 		// Make sure we haven't already saved this work in the current session.
-		if ( array_key_exists( $work->getPageTitle(), $this->savedWorks ) ) {
+		$pageTitle = $work->getPageTitle( false );
+		if ( array_key_exists( $pageTitle, $this->savedWorks ) ) {
+			$this->io->text( "Skipping $pageName as it's already been done." );
 			return;
 		}
-		$this->savedWorks[ $work->getPageTitle() ] = true;
-		$this->io->text( "Importing from {$this->currentLang->code}: " . $work->getPageTitle() );
+		$this->savedWorks[ $pageTitle ] = true;
+		$this->io->text( "Importing from {$this->currentLang->code}: " . $pageTitle );
 
 		// Ignore too many subpages.
 		$subpageCount = count( $work->getSubpages( 30 ) );
