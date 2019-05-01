@@ -1,7 +1,7 @@
 <?php
 
 
-class TestBase extends PHPUnit_Framework_TestCase {
+class TestBase extends PHPUnit\Framework\TestCase {
 
 	/** @var \App\DB\Database */
 	protected $db;
@@ -9,7 +9,7 @@ class TestBase extends PHPUnit_Framework_TestCase {
 	public function setUp() {
 		// Bootstrap.
 		parent::setUp();
-		require_once __DIR__.'/../bootstrap.php';
+		require_once __DIR__ . '/../bootstrap.php';
 
 		// Install.
 		$upgrade = new \App\Commands\UpgradeCommand();

@@ -149,7 +149,7 @@ class ScrapeCommand extends Command {
 
 		// Make sure we haven't already saved this work in the current session.
 		$pageTitle = $work->getPageTitle( false );
-		if ( array_key_exists( $pageTitle, $this->savedWorks ) ) {
+		if ( is_array( $this->savedWorks ) && array_key_exists( $pageTitle, $this->savedWorks ) ) {
 			$this->io->text( "Skipping $pageName as it's already been done." );
 			return;
 		}
@@ -194,7 +194,7 @@ class ScrapeCommand extends Command {
 						call_user_func( $callback, $datum['title'] );
 					} catch ( \Exception $e ) {
 						// If anything goes wrong, report it and carry on.
-						$this->io->error( 'Error with '.$datum['title'].' -- '.$e->getMessage() );
+						$this->io->error( 'Error with ' . $datum['title'] . ' -- ' . $e->getMessage() );
 					}
 				}
 			}
