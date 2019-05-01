@@ -31,7 +31,7 @@ abstract class ControllerBase {
 	 */
 	protected function sendFile( $ext, $mime, $content, $downloadName = false ) {
 		$filename = $downloadName ?: date( 'Y-m-d' );
-		$downloadName = $filename . '.' .  trim( $ext, '.' );
+		$downloadName = $filename . '.' . trim( $ext, '.' );
 		header( 'Content-Encoding: UTF-8' );
 		header( 'Content-type: ' . $mime . '; charset=UTF-8' );
 		header( 'Content-Disposition: attachment; filename="' . $downloadName . '"' );

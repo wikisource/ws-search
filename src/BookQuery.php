@@ -58,15 +58,15 @@ class BookQuery {
 		$subjectFilter = "?work wdt:P921 ?mainSubject . \n"
 			. "?mainSubject rdfs:label ?mainSubjectLabel . \n"
 			. "FILTER( "
-			. "    LANG(?mainSubjectLabel) = '".$this->lang."'"
-			. "    && REGEX( STR(?mainSubjectLabel), '.*".addslashes( $this->subject ).".*' )"
+			. "    LANG(?mainSubjectLabel) = '" . $this->lang . "'"
+			. "    && REGEX( STR(?mainSubjectLabel), '.*" . addslashes( $this->subject ) . ".*' )"
 			. ") ";
 
 		$genreFilter = "?work wdt:P136 ?genre . \n"
 			. "?genre rdfs:label ?genreLabel . \n"
 			. "FILTER( "
-			. "    LANG(?genreLabel) = '".$this->lang."'"
-			. "    && REGEX( STR(?genreLabel), '.*".addslashes( $this->genre ).".*' )"
+			. "    LANG(?genreLabel) = '" . $this->lang . "'"
+			. "    && REGEX( STR(?genreLabel), '.*" . addslashes( $this->genre ) . ".*' )"
 			. ") ";
 
 		$query = "SELECT
@@ -171,7 +171,7 @@ class BookQuery {
 		try {
 			$result = file_get_contents( $url );
 		} catch ( \Exception $e ) {
-			throw new \Exception( "Unable to run query: <pre>".htmlspecialchars( $query )."</pre>", 500 );
+			throw new \Exception( "Unable to run query: <pre>" . htmlspecialchars( $query ) . "</pre>", 500 );
 		}
 		if ( empty( $result ) ) {
 			// @OTODO: sort out a proper error handler! :(

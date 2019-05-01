@@ -13,7 +13,7 @@ class Text {
 	 */
 	public static function csvCell( $str ) {
 		if ( is_array( $str ) ) {
-			return self::csvCell( join( "|", $str ) );
+			return self::csvCell( implode( "|", $str ) );
 		}
 		if ( is_numeric( $str ) ) {
 			return $str;

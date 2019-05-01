@@ -4,7 +4,7 @@
     "license": "GPL-3.0+",
     "config": {
         "platform": {
-            "php": "5.5.9"
+            "php": "7.2"
         }
     },
     "autoload": {
@@ -16,22 +16,21 @@
         "classmap": ["tests/TestBase.php"]
     },
     "require": {
-        "wikisource/api": "^1.0",
-        "addwiki/mediawiki-api": "dev-master",
-        "addwiki/mediawiki-api-base": "2.*",
+        "wikisource/api": "^1.5",
+        "addwiki/mediawiki-api": "^0.7",
+        "addwiki/mediawiki-api-base": "^2.0",
         "nikic/fast-route": "^1.0",
-        "twig/twig": "^1.0",
-        "yohang/calendr": "^1.0",
+        "twig/twig": "^2.9",
+        "yohang/calendr": "^2.0",
         "nayjest/str-case-converter": "^1.0",
-        "dflydev/dot-access-data": "^1.0",
-        "symfony/dom-crawler": "^3.1",
-        "tedivm/stash": "^0.14.1",
-        "symfony/console": "^3.1",
+        "symfony/dom-crawler": "^4.2",
+        "tedivm/stash": "^0.15",
+        "symfony/console": "^4.2",
         "monolog/monolog": "^1.0"
     },
     "require-dev": {
-        "mediawiki/mediawiki-codesniffer": "^13.0",
-        "symfony/var-dumper": "^3.0",
+        "mediawiki/mediawiki-codesniffer": "^25.0",
+        "symfony/var-dumper": "^4.2",
         "pds/skeleton": "^1.0"
     },
     "scripts": {

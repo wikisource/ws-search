@@ -71,8 +71,8 @@ class RecentChangesCommand extends Command {
 	 */
 	protected function runOneLang( Wikisource $wikisource ) {
 		$this->io->text(
-			"---- Getting recent changes from ".$wikisource->getLanguageName()
-			." (" .$wikisource->getLanguageCode().") ---- "
+			"---- Getting recent changes from " . $wikisource->getLanguageName()
+			. " (" . $wikisource->getLanguageCode() . ") ---- "
 		);
 
 		// Get recentchanges from the last 2 days.

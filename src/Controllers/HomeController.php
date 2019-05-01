@@ -155,7 +155,7 @@ class HomeController extends ControllerBase {
 				. Text::csvCell( $work->publisher_location ) . ","
 				. Text::csvCell( $work->quality ) . ","
 				. Text::csvCell( $indexPages ) . ","
-				. Text::csvCell( $coverUrls )."\n";
+				. Text::csvCell( $coverUrls ) . "\n";
 		}
 		// header("content-type:text/plain");echo $out;exit();
 		$this->sendFile( 'csv', 'text/csv', $out, "wikisource_$langCode" );
