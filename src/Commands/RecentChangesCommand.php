@@ -27,11 +27,10 @@ class RecentChangesCommand extends Command {
 	private $workSaver;
 
 	/**
-	 * @param string $name
 	 * @param WorkSaver $workSaver
 	 */
-	public function __construct( $name = 'rc', WorkSaver $workSaver ) {
-		parent::__construct( $name );
+	public function __construct( WorkSaver $workSaver ) {
+		parent::__construct();
 		$this->workSaver = $workSaver;
 	}
 

@@ -29,7 +29,7 @@
         "wikisource/api": "^1.5"
     },
     "require-dev": {
-        "mediawiki/mediawiki-codesniffer": "^25.0",
+        "mediawiki/mediawiki-codesniffer": "^38.0",
         "symfony/var-dumper": "^4.2",
         "symfony/web-profiler-bundle": "^5.3",
         "pds/skeleton": "^1.0"

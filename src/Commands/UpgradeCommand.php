@@ -3,11 +3,11 @@
 namespace App\Commands;
 
 use App\Config;
+use Doctrine\DBAL\Connection;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Doctrine\DBAL\Connection;
 
 class UpgradeCommand extends Command {
 
@@ -15,11 +15,10 @@ class UpgradeCommand extends Command {
 	protected $out;
 
 	/**
-	 * @param string $name
 	 * @param Connection $connection
 	 */
-	public function __construct( $name = 'upgrade', Connection $connection ) {
-		parent::__construct( $name );
+	public function __construct( Connection $connection ) {
+		parent::__construct();
 		$this->db = $connection;
 	}
 

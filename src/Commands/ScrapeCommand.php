@@ -4,10 +4,11 @@ namespace App\Commands;
 
 use App\Config;
 use App\Database\WorkSaver;
-use Exception;
-use Mediawiki\Api\MediawikiApi;
-use Mediawiki\Api\FluentRequest;
 use Dflydev\DotAccessData\Data;
+use Doctrine\DBAL\Connection;
+use Exception;
+use Mediawiki\Api\FluentRequest;
+use Mediawiki\Api\MediawikiApi;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Stash\Driver\FileSystem;
@@ -19,7 +20,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Wikisource\Api\Wikisource;
 use Wikisource\Api\WikisourceApi;
-use Doctrine\DBAL\Connection;
 
 class ScrapeCommand extends Command {
 
@@ -45,12 +45,11 @@ class ScrapeCommand extends Command {
 	private $workSaver;
 
 	/**
-	 * @param string $name
 	 * @param Connection $connection
 	 * @param WorkSaver $workSaver
 	 */
-	public function __construct( $name = 'scape', Connection $connection, WorkSaver $workSaver ) {
-		parent::__construct( $name );
+	public function __construct( Connection $connection, WorkSaver $workSaver ) {
+		parent::__construct();
 		$this->db = $connection;
 		$this->workSaver = $workSaver;
 	}
@@ -141,6 +140,9 @@ class ScrapeCommand extends Command {
 		}
 	}
 
+	/**
+	 * @param string $langCode
+	 */
 	private function getAllWorks( $langCode ) {
 		$this->io->text( "Getting works from '$langCode' Wikisource." );
 		$request = FluentRequest::factory()
@@ -222,6 +224,8 @@ class ScrapeCommand extends Command {
 		return $data;
 	}
 
+	/**
+	 */
 	private function getWikisourceLangEditions() {
 		$this->io->text( "Getting list of Wikisource languages" );
 		$wikisources = $this->wsApi->fetchWikisources();

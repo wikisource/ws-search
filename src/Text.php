@@ -81,7 +81,7 @@ class Text {
 		/**
 		 * Marshall the correct replacement strings.
 		 */
-		if ( 'latex' == $format ) {
+		if ( $format === 'latex' ) {
 			$replacements = array_merge( $html_replacements, $latex_replacements );
 		} else {
 			$replacements = $html_replacements;
