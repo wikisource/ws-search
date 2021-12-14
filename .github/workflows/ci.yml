@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build:
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_DATABASE: wssearch_test
+          MYSQL_ROOT_PASSWORD: testpwd
+        ports:
+          - '3306:3306'
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    env:
+      APP_ENV: test
+      DATABASE_URL: mysql://root:testpwd@127.0.0.1:3306/wssearch_test?serverVersion=5.7
+
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        php: [ '7.3', '7.4', '8.0' ]
+
+    runs-on: ${{matrix.os}}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{matrix.php}}
+        extensions: pdo, mysql, pdo_mysql
+        coverage: none
+
+    - name: Install
+      run: |
+        composer install
+        ./bin/console upgrade
+
+    - name: Test
+      run: |
+        composer test

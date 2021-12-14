@@ -23,6 +23,18 @@ class RecentChangesCommand extends Command {
 	/** @var SymfonyStyle */
 	protected $io;
 
+	/** @var WorkSaver */
+	private $workSaver;
+
+	/**
+	 * @param string $name
+	 * @param WorkSaver $workSaver
+	 */
+	public function __construct( $name = 'rc', WorkSaver $workSaver ) {
+		parent::__construct( $name );
+		$this->workSaver = $workSaver;
+	}
+
 	/**
 	 *
 	 */
@@ -98,8 +110,7 @@ class RecentChangesCommand extends Command {
 					$this->io->warning( "Too many subpages (more than $subpageCount found)." );
 					continue;
 				}
-				$dbWork = new WorkSaver();
-				$dbWork->save( $work );
+				$this->workSaver->save( $work );
 			} catch ( UsageException $ex ) {
 				$this->io->error( $ex->getMessage() );
 			}

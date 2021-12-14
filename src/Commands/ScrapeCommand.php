@@ -3,7 +3,6 @@
 namespace App\Commands;
 
 use App\Config;
-use App\Database\Database;
 use App\Database\WorkSaver;
 use Exception;
 use Mediawiki\Api\MediawikiApi;
@@ -20,10 +19,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Wikisource\Api\Wikisource;
 use Wikisource\Api\WikisourceApi;
+use Doctrine\DBAL\Connection;
 
 class ScrapeCommand extends Command {
 
-	/** @var Database */
+	/** @var Connection */
 	private $db;
 
 	/** @var WikisourceApi */
@@ -40,6 +40,20 @@ class ScrapeCommand extends Command {
 
 	/** @var string[] Page titles of works already saved in the current session. */
 	protected $savedWorks;
+
+	/** @var WorkSaver */
+	private $workSaver;
+
+	/**
+	 * @param string $name
+	 * @param Connection $connection
+	 * @param WorkSaver $workSaver
+	 */
+	public function __construct( $name = 'scape', Connection $connection, WorkSaver $workSaver ) {
+		parent::__construct( $name );
+		$this->db = $connection;
+		$this->workSaver = $workSaver;
+	}
 
 	/**
 	 *
@@ -64,7 +78,6 @@ class ScrapeCommand extends Command {
 		$this->io = new SymfonyStyle( $input, $output );
 		$startTime = time();
 
-		$this->db = new Database;
 		$this->wsApi = new WikisourceApi();
 
 		// Cache.
@@ -121,7 +134,7 @@ class ScrapeCommand extends Command {
 	 */
 	public function setCurrentLang( $code ) {
 		$sql = "SELECT * FROM languages WHERE code=:code";
-		$this->currentLang = $this->db->query( $sql, [ 'code' => $code ] )->fetch();
+		$this->currentLang = $this->db->executeQuery( $sql, [ 'code' => $code ] )->fetchAssociative();
 		if ( !$this->currentLang ) {
 			$msg = "Unable to load language '$code'.\nDo you need to run this with `scrape --langs`?";
 			throw new Exception( $msg );
@@ -144,7 +157,7 @@ class ScrapeCommand extends Command {
 	 * @param string $pageName The Wikisource main namespace page title.
 	 */
 	protected function getSingleMainspaceWork( $pageName ) {
-		$ws = $this->wsApi->fetchWikisource( $this->currentLang->code );
+		$ws = $this->wsApi->fetchWikisource( $this->currentLang['code'] );
 		$work = $ws->getWork( $pageName );
 
 		// Make sure we haven't already saved this work in the current session.
@@ -154,7 +167,7 @@ class ScrapeCommand extends Command {
 			return;
 		}
 		$this->savedWorks[ $pageTitle ] = true;
-		$this->io->text( "Importing from {$this->currentLang->code}: " . $pageTitle );
+		$this->io->text( "Importing from {$this->currentLang['code']}: " . $pageTitle );
 
 		// Ignore too many subpages.
 		$subpageCount = count( $work->getSubpages( 30 ) );
@@ -163,8 +176,7 @@ class ScrapeCommand extends Command {
 			return;
 		}
 
-		$workSaver = new WorkSaver();
-		$workSaver->save( $work );
+		$this->workSaver->save( $work );
 	}
 
 	/**
@@ -174,7 +186,7 @@ class ScrapeCommand extends Command {
 	 * @return array
 	 */
 	public function completeQuery( FluentRequest $request, $resultKey, $callback = false ) {
-		$api = new MediawikiApi( "https://" . $this->currentLang->code . ".wikisource.org/w/api.php" );
+		$api = new MediawikiApi( "https://" . $this->currentLang['code'] . ".wikisource.org/w/api.php" );
 		$data = [];
 		$continue = true;
 		do {
@@ -221,7 +233,7 @@ class ScrapeCommand extends Command {
 				'ns' => $wikisource->getNamespaceId( Wikisource::NS_NAME_INDEX ),
 			];
 			$this->io->text( " -- Saving " . $params['label'] . ' (' . $params['code'] . ')' );
-			$this->db->query( $sql, $params );
+			$this->db->executeStatement( $sql, $params );
 		}
 	}
 }

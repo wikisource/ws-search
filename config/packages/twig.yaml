@@ -1,0 +1,4 @@
+twig:
+    default_path: '%kernel.project_dir%/templates'
+    globals:
+        site_title: '%env(resolve:SITE_TITLE)%'

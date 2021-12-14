@@ -18,6 +18,7 @@ class Config {
 		return realpath( $configFile );
 	}
 
+	// phpcs:ignore
 	protected static function get( $name, $default = null ) {
 		if ( file_exists( self::configFile() ) ) {
 			require self::configFile();
@@ -66,6 +67,7 @@ class Config {
 		return self::get( 'databasePassword', '' );
 	}
 
+	// phpcs:ignore
 	public static function storageDirData( $subdir = '' ) {
 		return self::storageDir( 'storageDirData', 'data', $subdir );
 	}
@@ -81,10 +83,12 @@ class Config {
 		return self::get( 'storageDirExport', self::storageDirTmp( 'export' ) );
 	}
 
+	// phpcs:ignore
 	public static function storageDirTmp( $subdir = '' ) {
 		return self::storageDir( 'storageDirTmp', 'tmp', $subdir );
 	}
 
+	// phpcs:ignore
 	protected static function storageDir( $configVarName, $dir = '', $subdir = '' ) {
 		$dataDir = self::get( $configVarName, false );
 		if ( $dataDir === false ) {

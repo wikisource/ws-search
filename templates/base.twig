@@ -6,7 +6,7 @@
 
     <div class="page-header">
         <h1>
-            <a href="{{baseurl}}">
+            <a href="{{path('home')}}">
                 <img src="//upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/114px-Wikisource-logo.svg.png" />
                 {{site_title}}
             </a>
@@ -31,23 +31,10 @@
     <div class="row">
         <p class="col-xs-12 text-right text-muted">
             This is <a href="https://wikitech.wikimedia.org/wiki/Tool:Wikisource Search">Wikisource Search</a>
-            version {{ app_version }}.
+            version {{ git_tag() }}.
             Please submit bug reports and suggestions via
             <a href="https://phabricator.wikimedia.org/tag/wikisource" target="_blank">Phabricator</a>.
         </p>
-
-    {% if debug %}
-    <ol class="queries">
-        {%for query in queries %}
-        <li>
-            <code>{{query.sql}}</code>
-            {% for key,val in query.params %}
-                [ {{key}} = {{val}} ]
-            {% endfor %}
-        </li>
-        {% endfor %}
-    </ol>
-    {% endif %}
 
     </div>
 </footer>

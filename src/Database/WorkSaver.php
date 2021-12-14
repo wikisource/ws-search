@@ -7,19 +7,20 @@ use Mediawiki\Api\FluentRequest;
 use Symfony\Component\DomCrawler\Crawler;
 use Wikisource\Api\IndexPage;
 use Wikisource\Api\Work;
+use Doctrine\DBAL\Connection;
 
 class WorkSaver {
 
-	/** @var Database */
+	/** @var Connection */
 	protected $db;
 
-	public function __construct() {
-		$this->db = new Database();
+	public function __construct( Connection $connection ) {
+		$this->db = $connection;
 	}
 
 	public function getLangId( $langCode ) {
 		$sql = "SELECT id FROM languages WHERE code = :code";
-		$langId = $this->db->query( $sql, [ 'code'=>$langCode ] )->fetchColumn();
+		$langId = $this->db->executeQuery( $sql, [ 'code' => $langCode ] )->fetchOne();
 		if ( !$langId ) {
 			throw new Exception( "Unable to find ID of $langCode" );
 		}
@@ -32,15 +33,15 @@ class WorkSaver {
 			'l' => $this->getLangId( $work->getWikisource()->getLanguageCode() ),
 		];
 		$sqlSelect = 'SELECT `id` FROM `works` WHERE `language_id`=:l AND `pagename`=:pagename';
-		return $this->db->query( $sqlSelect, $params )->fetchColumn();
+		return $this->db->executeQuery( $sqlSelect, $params )->fetchOne();
 	}
 
 	public function getOrCreateRecord( $table, $pagename, $langId ) {
 		$params = [ 'pagename' => $pagename, 'l' => $langId ];
 		$sqlInsert = "INSERT IGNORE INTO `$table` SET `language_id`=:l, `pagename`=:pagename";
-		$this->db->query( $sqlInsert, $params );
+		$this->db->executeQuery( $sqlInsert, $params );
 		$sqlSelect = "SELECT `id` FROM `$table` WHERE `language_id`=:l AND `pagename`=:pagename";
-		return $this->db->query( $sqlSelect, $params )->fetchColumn();
+		return $this->db->executeQuery( $sqlSelect, $params )->fetchOne();
 	}
 
 	public function save( Work $work ) {
@@ -64,7 +65,7 @@ class WorkSaver {
 			'title' => $work->getWorkTitle(),
 			'year' => $work->getYear(),
 		];
-		$this->db->query( $sql, $insertParams );
+		$this->db->executeQuery( $sql, $insertParams );
 		$workId = $this->getWorkId( $work );
 		if ( !is_numeric( $workId ) ) {
 			// Eh? What's going on here then?
@@ -77,7 +78,7 @@ class WorkSaver {
 		foreach ( $work->getAuthors() as $author ) {
 			$authorId = $this->getOrCreateRecord( 'authors', $author, $langId );
 			$sqlAuthorLink = 'INSERT IGNORE INTO `authors_works` SET author_id=:a, work_id=:w';
-			$this->db->query( $sqlAuthorLink, [ 'a' => $authorId, 'w' => $workId ] );
+			$this->db->executeQuery( $sqlAuthorLink, [ 'a' => $authorId, 'w' => $workId ] );
 		}
 
 		// Link the Index pages.
@@ -89,7 +90,7 @@ class WorkSaver {
 				'ip' => $indexPageId,
 				'w' => $workId,
 			];
-			$this->db->query( $sqlInsertIndexes, $paramsIndexes );
+			$this->db->executeQuery( $sqlInsertIndexes, $paramsIndexes );
 
 			// Quality and image.
 			if ( $indexPage->getQuality() ) {
@@ -101,7 +102,7 @@ class WorkSaver {
 					'quality' => $indexPage->getQuality(),
 					'id' => $indexPageId,
 				];
-				$this->db->query( $sql, $params );
+				$this->db->executeQuery( $sql, $params );
 			}
 
 			// Publisher.
