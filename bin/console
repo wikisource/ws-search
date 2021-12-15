@@ -15,10 +15,6 @@ set_time_limit(0);
 
 require dirname(__DIR__).'/vendor/autoload.php';
 
-if (!class_exists(Application::class) || !class_exists(Dotenv::class)) {
-    throw new LogicException('You need to add "symfony/framework-bundle" and "symfony/dotenv" as Composer dependencies.');
-}
-
 $input = new ArgvInput();
 if (null !== $env = $input->getParameterOption(['--env', '-e'], null, true)) {
     putenv('APP_ENV='.$_SERVER['APP_ENV'] = $_ENV['APP_ENV'] = $env);
@@ -30,11 +26,8 @@ if ($input->hasParameterOption('--no-debug', true)) {
 
 (new Dotenv())->bootEnv(dirname(__DIR__).'/.env');
 
-//require dirname( __DIR__ ) . '/config/bootstrap.php';
-
 if ($_SERVER['APP_DEBUG']) {
     umask(0000);
-
     if (class_exists(Debug::class)) {
         Debug::enable();
     }
