@@ -21,6 +21,11 @@ class Text {
 		return '"' . str_replace( [ "\n", "\r", '"' ], [ '\\n', "\\r", '""' ], $str ) . '"';
 	}
 
+	/**
+	 * @param string $str
+	 * @param string $glue
+	 * @return string
+	 */
 	public static function snakecase( $str, $glue = '_' ) {
 		$patterns = [ '/([a-z\d])([A-Z])/', '/([^_-])([A-Z][a-z])/' ];
 		return strtolower( preg_replace( $patterns, '$1' . $glue . '$2', $str ) );
@@ -41,7 +46,7 @@ class Text {
 	 * initial letters, and performing a few common (and not-so-common) word
 	 * replacements such as initialisms and punctuation.
 	 *
-	 * @param string|array $value The underscored and lowercase string to be titlecased, or an array of such strings.
+	 * @param string|array $value The underscored and lowercase string to be
 	 *                               titlecased, or an array of such strings.
 	 * @param 'html'|'latex' $format The desired output format.
 	 * @return string A properly-typeset title.
@@ -76,7 +81,7 @@ class Text {
 		/**
 		 * Marshall the correct replacement strings.
 		 */
-		if ( 'latex' == $format ) {
+		if ( $format === 'latex' ) {
 			$replacements = array_merge( $html_replacements, $latex_replacements );
 		} else {
 			$replacements = $html_replacements;

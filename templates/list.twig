@@ -8,7 +8,7 @@
 
     <li class="media list-group-item">
         <div class="media-left">
-            {% if work.indexPages.0 %}
+            {% if work.indexPages and work.indexPages.0 %}
             <a href="{{work.indexPages.0.cover_image_url}}" class="">
                 <img src="{{work.indexPages.0.cover_image_url}}" class="media-object" />
             </a>
