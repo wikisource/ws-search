@@ -2,7 +2,6 @@
 
 namespace App\Commands;
 
-use App\Config;
 use App\Database\WorkSaver;
 use Dflydev\DotAccessData\Data;
 use Doctrine\DBAL\Connection;
@@ -11,8 +10,7 @@ use Mediawiki\Api\FluentRequest;
 use Mediawiki\Api\MediawikiApi;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-use Stash\Driver\FileSystem;
-use Stash\Pool;
+use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -44,14 +42,19 @@ class ScrapeCommand extends Command {
 	/** @var WorkSaver */
 	private $workSaver;
 
+	/** @var CacheItemPoolInterface */
+	private $cache;
+
 	/**
 	 * @param Connection $connection
 	 * @param WorkSaver $workSaver
+	 * @param CacheItemPoolInterface $cache
 	 */
-	public function __construct( Connection $connection, WorkSaver $workSaver ) {
+	public function __construct( Connection $connection, WorkSaver $workSaver, CacheItemPoolInterface $cache ) {
 		parent::__construct();
 		$this->db = $connection;
 		$this->workSaver = $workSaver;
+		$this->cache = $cache;
 	}
 
 	/**
@@ -78,10 +81,7 @@ class ScrapeCommand extends Command {
 		$startTime = time();
 
 		$this->wsApi = new WikisourceApi();
-
-		// Cache.
-		$cache = new Pool( new FileSystem( [ 'path' => Config::storageDirTmp( 'cache' ) ] ) );
-		$this->wsApi->setCache( $cache );
+		$this->wsApi->setCache( $this->cache );
 
 		// Verbose output.
 		if ( $input->getOption( 'verbose' ) ) {

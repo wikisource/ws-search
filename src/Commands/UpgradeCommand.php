@@ -2,7 +2,6 @@
 
 namespace App\Commands;
 
-use App\Config;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -42,7 +41,7 @@ class UpgradeCommand extends Command {
 			$this->nukeData();
 		}
 		$this->installStructure();
-		$output->writeln( "Upgrade complete; now running version " . Config::version() );
+		$output->writeln( "Upgrade complete." );
 		return Command::SUCCESS;
 	}
 

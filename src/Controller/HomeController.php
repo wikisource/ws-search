@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Config;
 use App\Text;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -49,7 +48,6 @@ class HomeController extends ControllerBase {
 		$templateParams = [
 			'outputFormats' => $outputFormats,
 			'yesNoOptions' => $yesNoOptions,
-			'title' => Config::siteTitle(),
 			'form_vals' => [
 				'title' => $request->get( 'title' ),
 				'author' => $request->get( 'author' ),
