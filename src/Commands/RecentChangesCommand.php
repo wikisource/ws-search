@@ -2,14 +2,12 @@
 
 namespace App\Commands;
 
-use App\Config;
 use App\Database\WorkSaver;
 use Mediawiki\Api\FluentRequest;
 use Mediawiki\Api\UsageException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-use Stash\Driver\FileSystem;
-use Stash\Pool;
+use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -26,12 +24,17 @@ class RecentChangesCommand extends Command {
 	/** @var WorkSaver */
 	private $workSaver;
 
+	/** @var CacheItemPoolInterface */
+	private $cache;
+
 	/**
 	 * @param WorkSaver $workSaver
+	 * @param CacheItemPoolInterface $cache
 	 */
-	public function __construct( WorkSaver $workSaver ) {
+	public function __construct( WorkSaver $workSaver, CacheItemPoolInterface $cache ) {
 		parent::__construct();
 		$this->workSaver = $workSaver;
+		$this->cache = $cache;
 	}
 
 	/**
@@ -54,8 +57,7 @@ class RecentChangesCommand extends Command {
 
 		// Set up WikisourceApi.
 		$wsApi = new WikisourceApi();
-		$cache = new Pool( new FileSystem( [ 'path' => Config::storageDirTmp( 'cache' ) ] ) );
-		$wsApi->setCache( $cache );
+		$wsApi->setCache( $this->cache );
 
 		// Verbose output.
 		if ( $input->getOption( 'verbose' ) ) {
