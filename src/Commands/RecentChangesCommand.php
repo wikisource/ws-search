@@ -2,12 +2,13 @@
 
 namespace App\Commands;
 
-use App\Database\WorkSaver;
+use App\EditionSaver;
 use Mediawiki\Api\FluentRequest;
 use Mediawiki\Api\UsageException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Psr\Cache\CacheItemPoolInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -21,20 +22,25 @@ class RecentChangesCommand extends Command {
 	/** @var SymfonyStyle */
 	protected $io;
 
-	/** @var WorkSaver */
-	private $workSaver;
+	/** @var EditionSaver */
+	private $editionSaver;
 
 	/** @var CacheItemPoolInterface */
 	private $cache;
 
+	/** @var LoggerInterface */
+	private $logger;
+
 	/**
-	 * @param WorkSaver $workSaver
+	 * @param EditionSaver $editionSaver
 	 * @param CacheItemPoolInterface $cache
+	 * @param LoggerInterface $logger
 	 */
-	public function __construct( WorkSaver $workSaver, CacheItemPoolInterface $cache ) {
+	public function __construct( EditionSaver $editionSaver, CacheItemPoolInterface $cache, LoggerInterface $logger ) {
 		parent::__construct();
-		$this->workSaver = $workSaver;
+		$this->editionSaver = $editionSaver;
 		$this->cache = $cache;
+		$this->logger = $logger;
 	}
 
 	/**
@@ -58,6 +64,7 @@ class RecentChangesCommand extends Command {
 		// Set up WikisourceApi.
 		$wsApi = new WikisourceApi();
 		$wsApi->setCache( $this->cache );
+		$wsApi->setLogger( $this->logger );
 
 		// Verbose output.
 		if ( $input->getOption( 'verbose' ) ) {
@@ -98,20 +105,20 @@ class RecentChangesCommand extends Command {
 		$rc = $wikisource->getMediawikiApi()->getRequest( $request );
 		foreach ( $rc['query']['recentchanges'] as $rcItem ) {
 			try {
-				$work = $wikisource->getWork( $rcItem['title'] );
-				$this->io->text( $work->getPageTitle() );
+				$edition = $wikisource->getEdition( $rcItem['title'] );
+				$this->io->text( $edition->getPageTitle() );
 				// Ignore the Main_Page.
 				$mainPageId = 'Q5296';
-				if ( $work->getWikidataItemNumber() === $mainPageId ) {
+				if ( $edition->getWikidataItemNumber() === $mainPageId ) {
 					continue;
 				}
 				// Ignore too many subpages.
-				$subpageCount = count( $work->getSubpages( 30 ) );
+				$subpageCount = count( $edition->getSubpages( 30 ) );
 				if ( $subpageCount === 30 ) {
 					$this->io->warning( "Too many subpages (more than $subpageCount found)." );
 					continue;
 				}
-				$this->workSaver->save( $work );
+				$this->editionSaver->save( $edition );
 			} catch ( UsageException $ex ) {
 				$this->io->error( $ex->getMessage() );
 			}

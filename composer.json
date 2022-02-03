@@ -25,7 +25,7 @@
         "twig/extra-bundle": "^2.12 || ^3.0",
         "twig/twig": "^2.12 || ^3.0",
         "wikimedia/toolforge-bundle": "^1.4",
-        "wikisource/api": "^1.5"
+        "wikisource/api": "^2.0"
     },
     "require-dev": {
         "mediawiki/mediawiki-codesniffer": "^38.0",

@@ -2,7 +2,7 @@
 
 namespace App\Commands;
 
-use App\Database\WorkSaver;
+use App\EditionSaver;
 use Dflydev\DotAccessData\Data;
 use Doctrine\DBAL\Connection;
 use Exception;
@@ -39,21 +39,21 @@ class ScrapeCommand extends Command {
 	/** @var string[] Page titles of works already saved in the current session. */
 	protected $savedWorks;
 
-	/** @var WorkSaver */
-	private $workSaver;
+	/** @var EditionSaver */
+	private $editionSaver;
 
 	/** @var CacheItemPoolInterface */
 	private $cache;
 
 	/**
 	 * @param Connection $connection
-	 * @param WorkSaver $workSaver
+	 * @param EditionSaver $editionSaver
 	 * @param CacheItemPoolInterface $cache
 	 */
-	public function __construct( Connection $connection, WorkSaver $workSaver, CacheItemPoolInterface $cache ) {
+	public function __construct( Connection $connection, EditionSaver $editionSaver, CacheItemPoolInterface $cache ) {
 		parent::__construct();
 		$this->db = $connection;
-		$this->workSaver = $workSaver;
+		$this->editionSaver = $editionSaver;
 		$this->cache = $cache;
 	}
 
@@ -102,7 +102,7 @@ class ScrapeCommand extends Command {
 			$this->getAllWorks( $langCode );
 		}
 
-		// A single work from a single Wikisource.
+		// A single edition from a single Wikisource.
 		if ( $input->getOption( 'title' ) ) {
 			$langCode = $input->getOption( 'lang' );
 			if ( !$langCode ) {
@@ -160,10 +160,10 @@ class ScrapeCommand extends Command {
 	 */
 	protected function getSingleMainspaceWork( $pageName ) {
 		$ws = $this->wsApi->fetchWikisource( $this->currentLang['code'] );
-		$work = $ws->getWork( $pageName );
+		$edition = $ws->getEdition( $pageName );
 
-		// Make sure we haven't already saved this work in the current session.
-		$pageTitle = $work->getPageTitle( false );
+		// Make sure we haven't already saved this edition in the current session.
+		$pageTitle = $edition->getPageTitle( false );
 		if ( is_array( $this->savedWorks ) && array_key_exists( $pageTitle, $this->savedWorks ) ) {
 			$this->io->text( "Skipping $pageName as it's already been done." );
 			return;
@@ -172,13 +172,13 @@ class ScrapeCommand extends Command {
 		$this->io->text( "Importing from {$this->currentLang['code']}: " . $pageTitle );
 
 		// Ignore too many subpages.
-		$subpageCount = count( $work->getSubpages( 30 ) );
+		$subpageCount = count( $edition->getSubpages( 30 ) );
 		if ( $subpageCount === 30 ) {
 			$this->io->warning( "Too many subpages (more than $subpageCount found)." );
 			return;
 		}
 
-		$this->workSaver->save( $work );
+		$this->editionSaver->save( $edition );
 	}
 
 	/**
